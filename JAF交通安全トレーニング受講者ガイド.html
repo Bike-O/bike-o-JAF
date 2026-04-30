@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAF交通安全トレーニング 受講者ガイド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --jaf-navy: #0B2545;
+    --jaf-blue: #1563A3;
+    --jaf-accent: #E8A020;
+    --jaf-light: #EFF5FB;
+    --jaf-mid: #C5DAF0;
+    --text-primary: #0B2545;
+    --text-secondary: #3C5373;
+    --text-muted: #7A93AA;
+    --bg: #F4F7FB;
+    --white: #FFFFFF;
+    --border: rgba(21, 99, 163, 0.12);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.7;
+    font-size: 17px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--jaf-navy);
+    color: white;
+    padding: 80px 40px 70px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -80px;
+    width: 420px; height: 420px;
+    border-radius: 50%;
+    background: rgba(21, 99, 163, 0.35);
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -100px; left: 30%;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: rgba(232, 160, 32, 0.12);
+  }
+  .hero-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: var(--jaf-accent);
+    color: var(--jaf-navy);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 5px 14px;
+    border-radius: 2px;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', 'Noto Sans JP', serif;
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+  }
+  .hero h1 span { color: var(--jaf-accent); }
+  .hero-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 28px;
+  }
+
+  /* ── LAYOUT ── */
+  .page-wrapper {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 60px 24px 100px;
+  }
+
+  /* ── NAV ── */
+  .toc-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 36px;
+    margin-bottom: 56px;
+  }
+  .toc-title {
+    font-size: 13px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+  }
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 15px;
+    transition: background 0.18s, color 0.18s;
+    border: 1px solid transparent;
+  }
+  .toc-item:hover {
+    background: var(--jaf-light);
+    color: var(--jaf-blue);
+    border-color: var(--jaf-mid);
+  }
+  .toc-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--jaf-light);
+    color: var(--jaf-blue);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── SECTION HEADINGS ── */
+  .section-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--jaf-blue);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--jaf-navy);
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── INTRO ── */
+  .intro-box {
+    background: var(--jaf-light);
+    border-left: 3px solid var(--jaf-blue);
+    border-radius: 0 10px 10px 0;
+    padding: 22px 28px;
+    margin-bottom: 56px;
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.85;
+  }
+
+  /* ── MATERIAL CARDS ── */
+  section { margin-bottom: 72px; }
+
+  .material-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 20px;
+  }
+
+  .mat-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .mat-header {
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .mat-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 20px;
+  }
+  .mat-icon.blue  { background: #DCE9F8; }
+  .mat-icon.amber { background: #FDF0D5; }
+  .mat-icon.green { background: #E0F1E4; }
+  .mat-icon.coral { background: #FAE9E4; }
+
+  .mat-header-text h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--jaf-navy);
+    margin-bottom: 6px;
+  }
+
+  .meta-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .pill {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .pill-blue  { background: #DCE9F8; color: #1563A3; }
+  .pill-amber { background: #FDF0D5; color: #9A6510; }
+  .pill-green { background: #E0F1E4; color: #2A7A3E; }
+  .pill-coral { background: #FAE9E4; color: #A03820; }
+
+  .mat-body { padding: 22px 28px; flex: 1; }
+
+  .mat-desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.75;
+  }
+
+  .flow-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    position: relative;
+  }
+  .flow-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 14px; top: 32px;
+    width: 1px; height: calc(100% - 8px);
+    background: var(--jaf-mid);
+  }
+  .step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--jaf-light);
+    border: 1.5px solid var(--jaf-mid);
+    color: var(--jaf-blue);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .step-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    padding-top: 5px;
+    line-height: 1.6;
+  }
+
+  .points-box {
+    margin-top: 20px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .points-box .flow-label { margin-bottom: 10px; }
+  .point-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    padding: 5px 0;
+    line-height: 1.6;
+  }
+  .point-item::before {
+    content: '✓';
+    color: var(--jaf-blue);
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── ADDITIONAL FEATURES ── */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 640px) {
+    .feat-grid { grid-template-columns: 1fr; }
+    .material-grid { grid-template-columns: 1fr; }
+  }
+  .feat-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 20px;
+  }
+  .feat-icon {
+    font-size: 24px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .feat-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--jaf-navy);
+    margin-bottom: 8px;
+  }
+  .feat-card p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .freq-tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--jaf-blue);
+    background: var(--jaf-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+
+  /* ── SUPPORT ── */
+  .support-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 600px) {
+    .support-grid { grid-template-columns: 1fr; }
+  }
+  .support-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 24px;
+  }
+  .support-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--jaf-navy);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .support-list { list-style: none; }
+  .support-list li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    padding: 6px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.6;
+  }
+  .support-list li::before {
+    content: '→';
+    color: var(--jaf-blue);
+    flex-shrink: 0;
+    margin-top: 0px;
+    font-size: 14px;
+  }
+
+  /* ── EFFECTIVE ── */
+  .effective-card {
+    background: var(--jaf-navy);
+    border-radius: 14px;
+    padding: 40px 40px;
+    color: white;
+  }
+  .effective-card .section-title {
+    color: white;
+    border-bottom-color: rgba(255,255,255,0.15);
+    font-family: 'DM Serif Display', serif;
+  }
+  .eff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+  }
+  @media (max-width: 560px) {
+    .eff-grid { grid-template-columns: 1fr; }
+  }
+  .eff-block h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--jaf-accent);
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+  }
+  .eff-list { list-style: none; }
+  .eff-list li {
+    font-size: 14px;
+    color: rgba(255,255,255,0.75);
+    padding: 5px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.65;
+  }
+  .eff-list li::before {
+    content: '·';
+    color: var(--jaf-accent);
+    font-size: 18px;
+    line-height: 1.1;
+    flex-shrink: 0;
+  }
+
+  .evidence-quote {
+    margin-top: 28px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    padding-top: 22px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.8;
+    font-style: italic;
+  }
+  .evidence-quote strong {
+    color: rgba(255,255,255,0.8);
+    font-style: normal;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    padding: 40px 24px;
+    font-size: 14px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .hero-inner > * { animation: fadeUp 0.55s ease both; }
+  .hero-badge    { animation-delay: 0.05s; }
+  .hero h1       { animation-delay: 0.15s; }
+  .hero-sub      { animation-delay: 0.25s; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">LEARNER GUIDE</div>
+    <h1>JAF交通安全トレーニング<br><span>受講者ガイド</span></h1>
+    <div class="hero-sub">株式会社JAFメディアワークス</div>
+  </div>
+</div>
+
+<div class="page-wrapper">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-title">CONTENTS</div>
+    <div class="toc-grid">
+      <a href="#overview" class="toc-item"><span class="toc-num">1</span>システム概要</a>
+      <a href="#slide" class="toc-item"><span class="toc-num">2</span>スライド講座</a>
+      <a href="#kyt" class="toc-item"><span class="toc-num">3</span>危険予知トレーニング</a>
+      <a href="#quiz" class="toc-item"><span class="toc-num">4</span>○✕テスト</a>
+      <a href="#drr" class="toc-item"><span class="toc-num">5</span>ドライブレコーダー動画</a>
+      <a href="#additional" class="toc-item"><span class="toc-num">6</span>追加機能</a>
+      <a href="#support" class="toc-item"><span class="toc-num">7</span>サポート機能</a>
+      <a href="#effective" class="toc-item"><span class="toc-num">8</span>効果的な学習のために</a>
+    </div>
+  </div>
+
+  <!-- INTRO -->
+  <div class="intro-box">
+    この資料は、JAF交通安全トレーニングの受講者画面の使い方と各種教材の内容を詳細に解説したものです。スタッフの皆様が効果的に学習できるよう、システムの概要から具体的な操作方法までをカバーしています。
+  </div>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <span class="section-label">01 OVERVIEW</span>
+    <div class="section-title">システム概要</div>
+    <p style="color: var(--text-secondary); font-size: 14.5px; line-height: 1.85;">
+      JAF交通安全トレーニングは、定期的に配信される4種類の教材を通じて、安全運転に関する知識や意識を高めるためのeラーニングシステムです。受講者IDでログインすると、トップページに当月の新着教材が表示されます。
+    </p>
+  </section>
+
+  <!-- MATERIALS -->
+  <section id="slide">
+    <span class="section-label">02 MATERIALS</span>
+    <div class="section-title">教材の種類</div>
+
+    <div class="material-grid">
+
+      <!-- スライド講座 -->
+      <div class="mat-card">
+        <div class="mat-header">
+          <div class="mat-icon blue">📊</div>
+          <div class="mat-header-text">
+            <h3>スライド講座</h3>
+            <div class="meta-pills">
+              <span class="pill pill-blue">毎月3講座</span>
+              <span class="pill pill-blue">5〜9分／講座</span>
+            </div>
+          </div>
+        </div>
+        <div class="mat-body">
+          <p class="mat-desc">動画や写真で分かりやすく解説。施設に応じた内容1講座＋事故シチュエーション解説2講座を毎月配信。慣れや経験による思い込みを掘り下げ、安全な運転行動を促します。</p>
+          <div class="flow-label">LEARNING FLOW</div>
+          <div class="flow-steps">
+            <div class="flow-step"><div class="step-dot">1</div><div class="step-text">解説パートの視聴（音声・効果音あり）</div></div>
+            <div class="flow-step"><div class="step-dot">2</div><div class="step-text">確認テスト（1問）で理解度チェック</div></div>
+            <div class="flow-step"><div class="step-dot">3</div><div class="step-text">コメント入力（必須）</div></div>
+            <div class="flow-step"><div class="step-dot">4</div><div class="step-text">最終ページで重要ポイントを復習</div></div>
+          </div>
+          <div class="points-box">
+            <div class="flow-label">POINTS</div>
+            <div class="point-item">初回視聴は全編視聴しないと次に進めない設計</div>
+            <div class="point-item">途中に自己振り返りの設問あり（正誤判定なし）</div>
+            <div class="point-item">コメント未入力では終了不可</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 危険予知 -->
+      <div class="mat-card" id="kyt">
+        <div class="mat-header">
+          <div class="mat-icon amber">⚠️</div>
+          <div class="mat-header-text">
+            <h3>危険予知トレーニング</h3>
+            <div class="meta-pills">
+              <span class="pill pill-amber">毎月1講座</span>
+              <span class="pill pill-amber">約5分</span>
+            </div>
+          </div>
+        </div>
+        <div class="mat-body">
+          <p class="mat-desc">実際の路上でよく見られる交通シーンを短い動画で視聴後、注意すべきポイントをクイズ形式で回答。状況判断力を体系的に養成します。</p>
+          <div class="flow-label">LEARNING FLOW</div>
+          <div class="flow-steps">
+            <div class="flow-step"><div class="step-dot">1</div><div class="step-text">短い動画視聴（音声なし）</div></div>
+            <div class="flow-step"><div class="step-dot">2</div><div class="step-text">注意ポイントをクイズ形式で回答</div></div>
+            <div class="flow-step"><div class="step-dot">3</div><div class="step-text">正解後、動画で解説を確認</div></div>
+            <div class="flow-step"><div class="step-dot">4</div><div class="step-text">全ヒントの解説を確認して終了</div></div>
+          </div>
+          <div class="points-box">
+            <div class="flow-label">POINTS</div>
+            <div class="point-item">正解するまで次に進めない仕組み</div>
+            <div class="point-item">複数ヒントから最も注意すべきものを選択</div>
+            <div class="point-item">全ての解説確認が完了条件</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ○✕テスト -->
+      <div class="mat-card" id="quiz">
+        <div class="mat-header">
+          <div class="mat-icon green">✅</div>
+          <div class="mat-header-text">
+            <h3>○✕テスト</h3>
+            <div class="meta-pills">
+              <span class="pill pill-green">毎月20問</span>
+              <span class="pill pill-green">10問×2セット</span>
+            </div>
+          </div>
+        </div>
+        <div class="mat-body">
+          <p class="mat-desc">道路交通法・標識・ルールなど、曖昧になりがちな知識を○か×で回答し再確認。過去問からのランダム出題「総復習問題」も用意されています。</p>
+          <div class="flow-label">LEARNING FLOW</div>
+          <div class="flow-steps">
+            <div class="flow-step"><div class="step-dot">1</div><div class="step-text">問題を読み、○か×を選択</div></div>
+            <div class="flow-step"><div class="step-dot">2</div><div class="step-text">解説を確認</div></div>
+            <div class="flow-step"><div class="step-dot">3</div><div class="step-text">10問終了後に結果確認</div></div>
+          </div>
+          <div class="points-box">
+            <div class="flow-label">POINTS</div>
+            <div class="point-item">不正解時は5秒間ロックで解説を熟読促進</div>
+            <div class="point-item">途中から再開可能。隙間時間にも対応</div>
+            <div class="point-item">テスト結果は管理者側でも確認可能</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ドラレコ -->
+      <div class="mat-card" id="drr">
+        <div class="mat-header">
+          <div class="mat-icon coral">🎥</div>
+          <div class="mat-header-text">
+            <h3>ドライブレコーダー動画</h3>
+            <div class="meta-pills">
+              <span class="pill pill-coral">週2回配信</span>
+              <span class="pill pill-coral">月・金</span>
+            </div>
+          </div>
+        </div>
+        <div class="mat-body">
+          <p class="mat-desc">一般ドライバーから提供された実際のドライブレコーダー映像に専門家の解説を加えた教材。契約開始から現在までの全教材が閲覧可能です。</p>
+          <div class="flow-label">LEARNING FLOW</div>
+          <div class="flow-steps">
+            <div class="flow-step"><div class="step-dot">1</div><div class="step-text">短い動画を視聴（音声なし）</div></div>
+            <div class="flow-step"><div class="step-dot">2</div><div class="step-text">考えたことをコメント入力（1文字以上）</div></div>
+            <div class="flow-step"><div class="step-dot">3</div><div class="step-text">専門家による解説を確認</div></div>
+          </div>
+          <div class="points-box">
+            <div class="flow-label">POINTS</div>
+            <div class="point-item">リアルな危険場面でより実践的な判断力を養成</div>
+            <div class="point-item">新着順表示のほか、タグからも選択可能</div>
+            <div class="point-item">他教材と異なり全期間分が常時閲覧可能</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ADDITIONAL -->
+  <section id="additional">
+    <span class="section-label">06 ADDITIONAL FEATURES</span>
+    <div class="section-title">追加機能</div>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <span class="feat-icon">📰</span>
+        <span class="freq-tag">毎週水曜日</span>
+        <h4>トピックス</h4>
+        <p>交通安全に関するニュース記事や、季節に応じた内容・法改正情報などを配信。未読がある場合は上部タブに表示されます。</p>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🔔</span>
+        <span class="freq-tag">随時</span>
+        <h4>お知らせ</h4>
+        <p>JAFメディアワークスからのお知らせ、システム更新情報を掲載。社内間の連絡ツールとしても活用できます。</p>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🗂</span>
+        <span class="freq-tag">契約期間中</span>
+        <h4>過去教材</h4>
+        <p>契約期間中であれば前月までに配信されたすべての教材を「過去教材」タブからアーカイブ閲覧できます。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUPPORT -->
+  <section id="support">
+    <span class="section-label">07 SUPPORT</span>
+    <div class="section-title">システムのサポート機能</div>
+    <div class="support-grid">
+      <div class="support-card">
+        <h4>チュートリアルとヘルプ</h4>
+        <ul class="support-list">
+          <li>画面右上のユーザー名にカーソルを合わせるとチュートリアルを表示</li>
+          <li>各アイコンにカーソルを合わせると機能説明が表示</li>
+          <li>「運営へのお問い合わせ」から質問や相談が可能</li>
+        </ul>
+      </div>
+      <div class="support-card">
+        <h4>学習状況確認</h4>
+        <ul class="support-list">
+          <li>「マイページ」から自分の学習進捗を確認</li>
+          <li>「教材一覧」ページの「達成状況」からも確認可能</li>
+          <li>「?」マークにカーソルで達成状況の定義を表示</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- EFFECTIVE -->
+  <section id="effective">
+    <span class="section-label">08 BEST PRACTICES</span>
+    <div class="section-title">効果的な学習のために</div>
+    <div class="effective-card">
+      <div class="eff-grid">
+        <div class="eff-block">
+          <h4>コメント入力のポイント</h4>
+          <ul class="eff-list">
+            <li>単に「見る・クリックする」だけでなく、自分の気づきをアウトプット</li>
+            <li>一言だけでなく、具体的な気づきや今後に活かしたい点を記入</li>
+            <li>自分自身の運転行動を振り返るきっかけとして活用</li>
+          </ul>
+        </div>
+        <div class="eff-block">
+          <h4>学習頻度のすすめ</h4>
+          <ul class="eff-list">
+            <li>月1回まとめてより、週1回程度の定期受講が効果的</li>
+            <li>隙間時間を活用した少しずつの取り組みが継続につながる</li>
+            <li>定期受講＋質の高いコメントが事故防止に直結</li>
+          </ul>
+        </div>
+      </div>
+      <div class="evidence-quote">
+        「JAFメディアワークスが調査した導入企業の中でも、<strong>1週間に1回でも異なる教材を見て意識付けを定期的に行っている受講者や事業所</strong>で、事故ゼロをキープしている事例が報告されています。」
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="footer">
+  本ガイドについてご不明な点がありましたら、JAFメディアワークスの事務局までお問い合わせください。<br>
+  安全運転への意識を高め、事故防止に努めましょう。
+</div>
+
+</body>
+</html>
