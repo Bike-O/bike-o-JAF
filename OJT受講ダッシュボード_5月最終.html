@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026年度 新卒OJT 受講状況ダッシュボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg:#f5f9f2; --bg2:#ffffff; --bg3:#edf5e8;
+  --border:rgba(74,140,50,.12); --border2:rgba(74,140,50,.25);
+  --green-dark:#2d7a1f; --green:#4a8c32; --green-mid:#6aab4a;
+  --green-light:#c7e6b4; --green-pale:#edf5e8;
+  --yellow-dark:#b58c00; --yellow:#e6b800; --yellow-mid:#f5d000;
+  --yellow-light:#fff3b0; --yellow-pale:#fffbeb;
+  --text:#1a2e14; --text2:#5a7a4a; --text3:#9ab885;
+  --red:#d94a3a; --red-pale:#fdf0ee;
+  --amber:#c97a00; --amber-pale:#fff4e0;
+  --mono:'DM Mono',monospace; --sans:'Noto Sans JP',sans-serif;
+  --r-sm:6px; --r-md:10px; --r-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.7}
+body::before{content:'';position:fixed;top:-120px;right:-120px;width:600px;height:600px;background:radial-gradient(circle,rgba(106,171,74,.08) 0%,transparent 70%);pointer-events:none;z-index:0}
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh;position:relative;z-index:1}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--green-dark);position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;box-shadow:2px 0 12px rgba(45,122,31,.15)}
+.logo{padding:22px 20px 20px;background:rgba(0,0,0,.15);border-bottom:1px solid rgba(255,255,255,.1)}
+.wakaba-icon{width:36px;height:36px;margin-bottom:10px;display:block}
+.logo-tag{font-size:11px;font-family:var(--mono);color:var(--yellow-mid);letter-spacing:.12em;display:block;margin-bottom:3px}
+.logo-title{font-size:16px;font-weight:700;color:#fff;line-height:1.3}
+.logo-sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:3px}
+.nav-section{font-size:11px;font-family:var(--mono);color:rgba(255,255,255,.3);letter-spacing:.1em;padding:18px 20px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;cursor:pointer;color:rgba(255,255,255,.65);font-size:14px;transition:all .15s;border-left:3px solid transparent;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.active{color:#fff;background:rgba(255,255,255,.12);border-left-color:var(--yellow-mid);font-weight:500}
+.nav-icon{width:17px;height:17px;flex-shrink:0;opacity:.8}
+.nav-item.active .nav-icon{opacity:1}
+.nav-badge{margin-left:auto;font-size:11px;font-family:var(--mono);background:var(--red);color:#fff;padding:2px 8px;border-radius:10px}
+.sidebar-footer{margin-top:auto;padding:14px 20px;border-top:1px solid rgba(255,255,255,.1);font-size:12px;color:rgba(255,255,255,.4)}
+.date-chip{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.1);padding:3px 10px;border-radius:4px;display:inline-block;margin-top:5px;border:1px solid rgba(255,255,255,.15)}
+
+/* ── TOPBAR ── */
+.main{overflow-x:hidden}
+.topbar{padding:14px 32px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:10;box-shadow:0 1px 6px rgba(45,122,31,.06);gap:16px}
+.topbar-left{}
+.topbar-title{font-size:16px;font-weight:700;color:var(--green-dark)}
+.topbar-sub{font-size:13px;color:var(--text2);margin-top:1px}
+
+/* ── ★ RULE BANNER (大型) ── */
+.rule-banner{
+  display:flex;align-items:center;gap:14px;
+  background:var(--yellow-pale);
+  border:2px solid var(--yellow);
+  border-radius:var(--r-lg);
+  padding:12px 22px;
+  flex-shrink:0;
+}
+.rule-banner-icon{font-size:28px;line-height:1;flex-shrink:0}
+.rule-banner-body{}
+.rule-banner-label{font-size:11px;font-family:var(--mono);color:var(--yellow-dark);letter-spacing:.08em;font-weight:600;margin-bottom:2px}
+.rule-banner-main{font-size:17px;font-weight:700;color:var(--yellow-dark);line-height:1.2}
+.rule-banner-sub{font-size:12px;color:var(--amber);margin-top:2px}
+.rule-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--yellow);margin-right:6px;animation:pulse 2s ease-in-out infinite;vertical-align:middle}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+/* ── PANELS ── */
+.panel{display:none}
+.panel.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.content{padding:28px 32px}
+
+/* ── ★ ALERT BANNER (大型) ── */
+.alert-banner{
+  background:var(--red-pale);
+  border:2px solid rgba(217,74,58,.35);
+  border-left:6px solid var(--red);
+  border-radius:var(--r-lg);
+  padding:18px 22px;
+  display:flex;align-items:flex-start;gap:16px;
+  margin-bottom:24px;
+}
+.alert-banner-icon{font-size:30px;flex-shrink:0;line-height:1;margin-top:2px}
+.alert-banner-title{font-size:18px;font-weight:700;color:var(--red);margin-bottom:6px}
+.alert-banner-body{font-size:14px;color:#b03020;line-height:1.8}
+.alert-banner-body strong{font-weight:700;color:var(--red)}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(45,122,31,.05);transition:box-shadow .2s}
+.kpi:hover{box-shadow:0 3px 10px rgba(45,122,31,.1)}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 var(--r-lg) var(--r-lg)}
+.kpi.green::after{background:var(--green)}.kpi.yellow::after{background:var(--yellow)}.kpi.red::after{background:var(--red)}.kpi.amber::after{background:var(--amber)}
+.kpi-label{font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500}
+.kpi-val{font-size:30px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:5px}
+.kpi.green .kpi-val{color:var(--green)}.kpi.yellow .kpi-val{color:var(--yellow-dark)}.kpi.red .kpi-val{color:var(--red)}.kpi.amber .kpi-val{color:var(--amber)}
+.kpi-sub{font-size:12px;color:var(--text3);font-family:var(--mono)}
+
+/* ── SECTION HEAD ── */
+.section-head{display:flex;align-items:center;gap:10px;margin:28px 0 14px}
+.section-tag{font-size:11px;font-family:var(--mono);color:var(--green-dark);background:var(--green-pale);border:1px solid var(--green-light);padding:3px 10px;border-radius:3px;letter-spacing:.08em;font-weight:600}
+.section-title{font-size:15px;font-weight:600;color:var(--text)}
+
+/* ── CHART CARDS ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;box-shadow:0 1px 4px rgba(45,122,31,.05)}
+.chart-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px}
+.chart-wrap{position:relative}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text2);margin-bottom:12px;font-family:var(--mono)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* ── PERSON CARDS ── */
+.person-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.pcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;transition:box-shadow .2s,transform .15s;border-top-width:3px;box-shadow:0 1px 4px rgba(45,122,31,.05)}
+.pcard:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(45,122,31,.12)}
+.pcard.all-ok{border-top-color:var(--green)}.pcard.warn{border-top-color:var(--amber)}.pcard.danger{border-top-color:var(--red)}
+.pcard-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.pcard-store{font-size:12px;color:var(--text2);margin-bottom:12px}
+.prog-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.prog-label{font-size:11px;color:var(--text3);width:70px;flex-shrink:0;font-family:var(--mono)}
+.prog-track{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px}
+.prog-val{font-size:11px;color:var(--text3);font-family:var(--mono);width:28px;text-align:right;flex-shrink:0}
+.login-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-family:var(--mono);padding:4px 11px;border-radius:20px;margin-top:10px;font-weight:500}
+.login-pill.green{background:var(--green-pale);color:var(--green-dark);border:1px solid var(--green-light)}
+.login-pill.amber{background:var(--amber-pale);color:var(--amber);border:1px solid #f5d090}
+.login-pill.red{background:var(--red-pale);color:var(--red);border:1px solid #f5c0b8}
+
+/* ── LOGIN TABLE ── */
+.login-table{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;width:100%;border-collapse:collapse;box-shadow:0 1px 4px rgba(45,122,31,.05)}
+.login-table th{background:var(--green-pale);font-size:12px;font-family:var(--mono);color:var(--green-dark);padding:11px 16px;text-align:left;letter-spacing:.04em;border-bottom:1px solid var(--border2);font-weight:600}
+.login-table td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:14px;color:var(--text)}
+.login-table tr:last-child td{border-bottom:none}
+.login-table tr:hover td{background:var(--green-pale)}
+.count-bar-wrap{display:flex;align-items:center;gap:10px}
+.count-bar{height:7px;border-radius:3px;flex-shrink:0}
+.count-num{font-family:var(--mono);font-size:14px;font-weight:600;min-width:28px}
+.status-badge{font-size:11px;font-family:var(--mono);padding:3px 10px;border-radius:3px;font-weight:600}
+.status-badge.green{background:var(--green-pale);color:var(--green-dark);border:1px solid var(--green-light)}
+.status-badge.amber{background:var(--amber-pale);color:var(--amber);border:1px solid #f5d090}
+.status-badge.red{background:var(--red-pale);color:var(--red);border:1px solid #f5c0b8}
+
+/* ── DORECO VIDEO ROWS ── */
+.video-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px}
+.video-label{color:var(--text2);flex:1;font-size:12px}
+.check-done{color:var(--green);font-weight:700}
+.check-none{color:var(--text3)}
+
+/* ── COMMENTS ── */
+.comment-list{display:flex;flex-direction:column;gap:10px}
+.citem{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 20px;transition:box-shadow .2s;box-shadow:0 1px 4px rgba(45,122,31,.04)}
+.citem:hover{box-shadow:0 3px 10px rgba(45,122,31,.1)}
+.citem-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.citem-name{font-size:14px;font-weight:700;color:var(--text)}
+.citem-store{font-size:12px;color:var(--text3)}
+.citem-tag{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:3px;background:var(--yellow-pale);color:var(--yellow-dark);border:1px solid #e6d070;margin-left:auto;font-weight:500}
+.citem-text{font-size:14px;color:var(--text2);line-height:1.8}
+
+/* ── ★ TEXT ANALYSIS ── */
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.analysis-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;box-shadow:0 1px 4px rgba(45,122,31,.05)}
+.analysis-card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.analysis-card-title span{font-size:15px}
+/* keyword frequency bars */
+.kw-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.kw-word{font-size:13px;color:var(--text);width:120px;flex-shrink:0;font-weight:500}
+.kw-track{flex:1;height:9px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.kw-fill{height:100%;border-radius:4px;background:var(--green)}
+.kw-count{font-size:12px;font-family:var(--mono);color:var(--text2);width:24px;text-align:right;flex-shrink:0}
+/* sentiment dots */
+.sentiment-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.sentiment-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.sent-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.sent-dot.positive{background:var(--green)}
+.sent-dot.awareness{background:var(--yellow)}
+.sent-dot.concern{background:var(--amber)}
+.sent-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.sent-quote{font-size:13px;color:var(--text2);line-height:1.7}
+/* theme pills */
+.theme-wrap{display:flex;flex-wrap:wrap;gap:8px}
+.theme-pill{font-size:13px;padding:5px 13px;border-radius:20px;font-weight:500;cursor:default}
+.theme-pill.t1{background:var(--green-pale);color:var(--green-dark);border:1px solid var(--green-light)}
+.theme-pill.t2{background:var(--yellow-pale);color:var(--yellow-dark);border:1px solid #e6d070}
+.theme-pill.t3{background:var(--amber-pale);color:var(--amber);border:1px solid #f5d090}
+.theme-pill.t4{background:var(--red-pale);color:var(--red);border:1px solid #f5c0b8}
+.theme-pill-count{font-size:11px;font-family:var(--mono);margin-left:4px;opacity:.7}
+/* insight box */
+.insight-box{background:var(--green-pale);border:1px solid var(--green-light);border-radius:var(--r-md);padding:16px 18px;margin-bottom:16px}
+.insight-box-title{font-size:12px;font-family:var(--mono);color:var(--green-dark);font-weight:600;letter-spacing:.06em;margin-bottom:8px}
+.insight-box ul{padding-left:18px}
+.insight-box li{font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:5px}
+.insight-box li strong{color:var(--text);font-weight:600}
+
+/* ── PERSON COMMENT CARD ── */
+.person-comment-grid{display:flex;flex-direction:column;gap:16px}
+.pc-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 1px 4px rgba(45,122,31,.05);transition:box-shadow .2s}
+.pc-card:hover{box-shadow:0 4px 14px rgba(45,122,31,.1)}
+.pc-card-header{display:flex;align-items:center;gap:14px;padding:14px 20px;background:var(--green-pale);border-bottom:1px solid var(--border)}
+.pc-avatar{width:40px;height:40px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}
+.pc-name{font-size:16px;font-weight:700;color:var(--text)}
+.pc-store{font-size:13px;color:var(--text2);margin-top:1px}
+.pc-body{padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.pc-entry{display:flex;gap:12px;align-items:flex-start}
+.pc-entry-tag{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:3px;background:var(--yellow-pale);color:var(--yellow-dark);border:1px solid #e6d070;font-weight:600;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.pc-entry-tag.doreco{background:var(--green-pale);color:var(--green-dark);border-color:var(--green-light)}
+.pc-entry-text{font-size:14px;color:var(--text2);line-height:1.75}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--green-light);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ════ SIDEBAR ════ -->
+<nav class="sidebar">
+  <div class="logo">
+    <svg class="wakaba-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="18,3 6,30 18,24 30,30" fill="#f5d000" stroke="#b58c00" stroke-width="1.2" stroke-linejoin="round"/>
+      <polygon points="18,10 10,30 18,26 26,30" fill="#4a8c32" stroke="#2d7a1f" stroke-width="1" stroke-linejoin="round"/>
+    </svg>
+    <span class="logo-tag">JAF TRAINING 2026</span>
+    <div class="logo-title">OJT<br>受講ダッシュボード</div>
+    <div class="logo-sub">新卒14名</div>
+  </div>
+  <div class="nav-section">MENU</div>
+  <div class="nav-item active" onclick="showPanel('overview',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    全体進捗
+  </div>
+  <div class="nav-item" onclick="showPanel('login',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+    ログイン状況
+  </div>
+  <div class="nav-item" onclick="showPanel('doreco',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+    ドラレコ動画
+    <span class="nav-badge">要対応</span>
+  </div>
+  <div class="nav-item" onclick="showPanel('detail',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    個人詳細
+  </div>
+  <div class="nav-item" onclick="showPanel('comments',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    感想・コメント
+  </div>
+  <div class="sidebar-footer">
+    集計日
+    <div class="date-chip">2026-06-01</div>
+  </div>
+</nav>
+
+<!-- ════ MAIN ════ -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="topbar-title">全体進捗</div>
+      <div class="topbar-sub">新卒14名 ／ 4講座</div>
+    </div>
+    <!-- ★ 大型ルールバナー -->
+    <div class="rule-banner">
+      <div class="rule-banner-icon">🚗</div>
+      <div class="rule-banner-body">
+        <div class="rule-banner-label"><span class="rule-dot"></span>COMPANY RULE</div>
+        <div class="rule-banner-main">週3回以上ログイン</div>
+        <div class="rule-banner-sub">月15回以上が目安ライン</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ OVERVIEW ══════ -->
+  <div class="panel active" id="panel-overview">
+    <div class="content">
+
+      <!-- ★ 大型アラートバナー -->
+      <div class="alert-banner" style="background:#edf5e8;border-color:rgba(74,140,50,.3);border-left-color:var(--green)">
+        <div class="alert-banner-icon">🎉</div>
+        <div>
+          <div class="alert-banner-title" style="color:var(--green-dark)">ドラレコ動画：前回から大きく改善！4名が今回完了しました</div>
+          <div class="alert-banner-body" style="color:var(--text2)">
+            <strong style="color:var(--green-dark)">🏆 今回新たに全4本完了：</strong>忽那航太・葭矢淳・鶴田京士朗・松本愛哉<br>
+            <strong style="color:var(--amber)">📈 前回0本→今回視聴開始：</strong>西川智裕（1本）・深田未来（2本）<br>
+            <strong style="color:var(--red)">⚠ 引き続き未視聴（0本）：</strong>三田大夢・難波杏介・黒坂悠貴・山田泰大（1本）
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi green"><div class="kpi-label">スライド講座</div><div class="kpi-val">100%</div><div class="kpi-sub">14/14名 完了</div></div>
+        <div class="kpi green"><div class="kpi-label">○×テスト</div><div class="kpi-val">100%</div><div class="kpi-sub">全員合格</div></div>
+        <div class="kpi green"><div class="kpi-label">タッチで危険予測</div><div class="kpi-val">100%</div><div class="kpi-sub">14/14名 完了</div></div>
+        <div class="kpi amber"><div class="kpi-label">ドラレコ動画</div><div class="kpi-val">64%</div><div class="kpi-sub">全4本完了：9名（前回5名）</div></div>
+      </div>
+
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="chart-title">講座別 完了 / 未完了（人数）</div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#4a8c32"></span>完了</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#d94a3a"></span>未完了</div>
+          </div>
+          <div class="chart-wrap" style="height:200px"><canvas id="chartCourses" role="img" aria-label="講座別完了状況"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">ドラレコ 視聴本数 分布（14名）</div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#4a8c32"></span>全4本</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#c97a00"></span>部分視聴</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#d94a3a"></span>未視聴</div>
+          </div>
+          <div class="chart-wrap" style="height:200px"><canvas id="chartDist" role="img" aria-label="ドラレコ視聴分布"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <span class="section-tag">DORECO</span>
+        <span class="section-title">ドラレコ動画 個人別視聴状況（4本中）</span>
+      </div>
+      <div class="chart-card">
+        <div class="legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#4a8c32"></span>視聴済み</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#d4e8cc"></span>未視聴</div>
+        </div>
+        <div class="chart-wrap" style="height:420px"><canvas id="chartDorecoBar" role="img" aria-label="ドラレコ個人別視聴数"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ LOGIN ══════ -->
+  <div class="panel" id="panel-login">
+    <div class="content">
+      <div class="kpi-grid">
+        <div class="kpi green"><div class="kpi-label">直近ログイン（6月）</div><div class="kpi-val">2名</div><div class="kpi-sub">小葉松将輝・松本愛哉（06/01）</div></div>
+        <div class="kpi green"><div class="kpi-label">5月末ログイン</div><div class="kpi-val">4名</div><div class="kpi-sub">佐藤・廣内→05/31、忽那・廣内</div></div>
+        <div class="kpi red"><div class="kpi-label">最終ログインが古い</div><div class="kpi-val">3名</div><div class="kpi-sub">児島（05/17）・難波（05/19）・山田（05/22）</div></div>
+        <div class="kpi amber"><div class="kpi-label">※ログイン回数</div><div class="kpi-val">―</div><div class="kpi-sub">6月集計のため5月分取得不可</div></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:20px">
+        <div class="chart-title">最終ログイン日（新しい順）※ログイン回数は6月集計のため5月分取得不可</div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#4a8c32"></span>達成（15回以上）</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#c97a00"></span>要注目（8〜14回）</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#d94a3a"></span>要確認（7回以下）</div>
+        </div>
+        <div class="chart-wrap" style="height:400px"><canvas id="chartLogin" role="img" aria-label="ログイン回数棒グラフ"></canvas></div>
+      </div>
+      <div class="section-head"><span class="section-tag">TABLE</span><span class="section-title">ログイン詳細一覧</span></div>
+      <table class="login-table">
+        <thead><tr><th>氏名</th><th>所属店舗</th><th>ログイン回数</th><th>最終ログイン</th><th>ステータス</th></tr></thead>
+        <tbody id="loginTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════ DORECO ══════ -->
+  <div class="panel" id="panel-doreco">
+    <div class="content">
+      <div class="alert-banner" style="background:#edf5e8;border-color:rgba(74,140,50,.3);border-left-color:var(--green)">
+        <div class="alert-banner-icon">🎉</div>
+        <div>
+          <div class="alert-banner-title" style="color:var(--green-dark)">前回から大きく改善！全完了者が5名→9名に増加（64%）</div>
+          <div class="alert-banner-body" style="color:var(--text2)">
+            <strong style="color:var(--green-dark)">🏆 今回新たに完了：</strong>忽那航太・葭矢淳・鶴田京士朗・松本愛哉<br>
+            <strong style="color:var(--red)">⚠ 引き続き要フォロー：</strong>三田大夢・難波杏介・黒坂悠貴（0本）、山田泰大・西川智裕（1本）
+          </div>
+        </div>
+      </div>
+      <div class="section-head"><span class="section-tag">STATUS</span><span class="section-title">個人別ドラレコ視聴状況</span></div>
+      <div class="person-grid" id="dorecoCards"></div>
+    </div>
+  </div>
+
+  <!-- ══════ DETAIL ══════ -->
+  <div class="panel" id="panel-detail">
+    <div class="content">
+      <div class="section-head"><span class="section-tag">ALL</span><span class="section-title">個人別 全講座進捗</span></div>
+      <div class="person-grid" id="personCards"></div>
+
+      <div class="section-head" style="margin-top:32px">
+        <span class="section-tag">SLIDE</span>
+        <span class="section-title">スライド講座 実施詳細（3教材）</span>
+      </div>
+      <table class="login-table">
+        <thead><tr>
+          <th>氏名</th><th>店舗</th>
+          <th>①シートベルト<br><span style="font-weight:400;font-size:11px;opacity:.8">理解度 / 実施回数</span></th>
+          <th>②出発前確認<br><span style="font-weight:400;font-size:11px;opacity:.8">理解度 / 実施回数</span></th>
+          <th>③道交法遵守<br><span style="font-weight:400;font-size:11px;opacity:.8">理解度 / 実施回数</span></th>
+          <th>理解できた回数<br><span style="font-weight:400;font-size:11px;opacity:.8">3教材合計</span></th>
+        </tr></thead>
+        <tbody id="slideDetailBody"></tbody>
+      </table>
+
+      <div class="section-head" style="margin-top:32px">
+        <span class="section-tag">TEST</span>
+        <span class="section-title">○×テスト 実施詳細</span>
+      </div>
+      <table class="login-table">
+        <thead><tr>
+          <th>氏名</th><th>店舗</th>
+          <th>4-1 実施回数</th>
+          <th>4-1 得点</th>
+          <th>4-2 実施回数</th>
+          <th>4-2 得点</th>
+          <th>合格したのは何回目</th>
+          <th>合否</th>
+        </tr></thead>
+        <tbody id="testDetailBody"></tbody>
+      </table>
+
+      <div class="section-head" style="margin-top:32px">
+        <span class="section-tag">TOUCH</span>
+        <span class="section-title">タッチで危険予測 実施詳細</span>
+      </div>
+      <table class="login-table">
+        <thead><tr>
+          <th>氏名</th><th>店舗</th>
+          <th>動画閲覧</th>
+          <th>解説読了</th>
+          <th>正解したのは何回目</th>
+        </tr></thead>
+        <tbody id="touchDetailBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════ COMMENTS ══════ -->
+  <div class="panel" id="panel-comments">
+    <div class="content">
+
+      <!-- ★ テキスト分析セクション -->
+      <div class="section-head"><span class="section-tag">ANALYSIS</span><span class="section-title">感想・コメント テキスト分析</span></div>
+
+      <div class="insight-box">
+        <div class="insight-box-title">📊 AI分析サマリー</div>
+        <ul>
+          <li><strong>🏆 ドラレコ完了率が36%→64%に急伸</strong> — 忽那・葭矢・鶴田・松本の4名が今回新たに全4本完了。前回フォローの効果が表れている</li>
+          <li><strong>「確認」が最多キーワード（14件）</strong> — 目視確認・周囲確認の重要性が全員に浸透している</li>
+          <li><strong>会社・社用車への責任意識が高い（14件）</strong> — 「会社の看板」「信用」「会社の一員」という言葉が全員のコメントに登場</li>
+          <li><strong>後部座席シートベルトへの気づきが多い</strong> — 児島・鶴田など複数名が「今まで着けていなかった」と自己開示。講座の効果が明確に出ている</li>
+          <li><strong>鶴田京士朗のドラレココメントが特に詳細</strong> — 物理的な原因分析（フロントヘビー・荷重移動）まで踏み込んだ高い理解度を示している</li>
+          <li><strong>小葉松将輝の「知識はあるが実行が難しい」という自己評価</strong> — 知識と行動のギャップを自覚している貴重なコメント。引き続き個別フォロー推奨</li>
+        </ul>
+      </div>
+
+      <div class="analysis-grid">
+        <!-- キーワード頻度 -->
+        <div class="analysis-card">
+          <div class="analysis-card-title"><span>🔤</span>キーワード出現頻度（全コメント）</div>
+          <div id="kwBars"></div>
+        </div>
+        <!-- テーマ分類 -->
+        <div class="analysis-card">
+          <div class="analysis-card-title"><span>🏷️</span>コメントのテーマ分類</div>
+          <div class="theme-wrap" id="themePills"></div>
+          <div style="margin-top:16px">
+            <div class="chart-wrap" style="height:180px"><canvas id="chartTheme" role="img" aria-label="テーマ別コメント分布"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="analysis-grid">
+        <!-- 注目コメント（ポジティブ・気づき・課題） -->
+        <div class="analysis-card">
+          <div class="analysis-card-title"><span>💬</span>注目コメント（感情軸）</div>
+          <div id="sentimentList"></div>
+        </div>
+        <!-- 受講後の行動宣言まとめ -->
+        <div class="analysis-card">
+          <div class="analysis-card-title"><span>✅</span>行動変容の宣言（具体的な誓い）</div>
+          <div id="actionList"></div>
+        </div>
+      </div>
+
+      <div class="section-head" style="margin-top:8px"><span class="section-tag">個人別</span><span class="section-title">スライド講座 感想 ＋ ドラレコ動画 コメント（個人別）</span></div>
+      <div class="person-comment-grid" id="personComments"></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+/* ── DATA ── */
+const NAMES=['佐藤風馬','三田大夢','小葉松将輝','廣内将剛','忽那航太','西川智裕','難波杏介','黒坂悠貴','深田未来','葭矢淳','鶴田京士朗','児島翔太','松本愛哉','山田泰大'];
+const STORES={'佐藤風馬':'仙台店','三田大夢':'インターパーク宇都宮店','小葉松将輝':'柏店','廣内将剛':'市川店','忽那航太':'草加店','西川智裕':'相模大野店','難波杏介':'世田谷本店','黒坂悠貴':'八王子堀之内店','深田未来':'イオンモール鈴鹿店','葭矢淳':'東大阪店','鶴田京士朗':'姫路店','児島翔太':'寝屋川店','松本愛哉':'伊丹店','山田泰大':'福岡店'};
+const LOGINS={'佐藤風馬':null,'三田大夢':null,'小葉松将輝':null,'廣内将剛':null,'忽那航太':null,'西川智裕':null,'難波杏介':null,'黒坂悠貴':null,'深田未来':null,'葭矢淳':null,'鶴田京士朗':null,'児島翔太':null,'松本愛哉':null,'山田泰大':null};
+const LAST_LOGIN={'佐藤風馬':'05/31','三田大夢':'05/26','小葉松将輝':'06/01','廣内将剛':'05/21','忽那航太':'05/31','西川智裕':'05/26','難波杏介':'05/19','黒坂悠貴':'05/21','深田未来':'05/29','葭矢淳':'05/28','鶴田京士朗':'05/29','児島翔太':'05/17','松本愛哉':'06/01','山田泰大':'05/22'};
+const DORECO={'佐藤風馬':4,'三田大夢':0,'小葉松将輝':4,'廣内将剛':4,'忽那航太':4,'西川智裕':1,'難波杏介':0,'黒坂悠貴':0,'深田未来':2,'葭矢淳':4,'鶴田京士朗':4,'児島翔太':4,'松本愛哉':4,'山田泰大':1};
+const SLIDE_OK={'佐藤風馬':3,'三田大夢':3,'小葉松将輝':2,'廣内将剛':3,'忽那航太':3,'西川智裕':3,'難波杏介':3,'黒坂悠貴':3,'深田未来':2,'葭矢淳':3,'鶴田京士朗':3,'児島翔太':3,'松本愛哉':3,'山田泰大':3};
+const DORECO_VIDEOS=['山道でのスリップ','交差点ショートカット歩行者','すり抜け自転車巻き込み','右折位置の誤認と逆走'];
+const DORECO_IMPROVED=['忽那航太','葭矢淳','鶴田京士朗','松本愛哉'];  // 今回完了
+const DORECO_PARTIAL_IMPROVED=['西川智裕','深田未来'];  // 前回0→今回部分視聴
+
+const SLIDE_COMMENTS_DATA=[
+  {name:'佐藤風馬',topic:'シートベルト',text:'シートベルトの着用は、運転席や助手席の人はつける人は多いが後部座席でも万が一に備えて毎回つけることを意識することが大切です。シートベルトは自分だけではなく同乗者の命も守ることを理解しなければなりません。'},
+  {name:'佐藤風馬',topic:'出発前確認',text:'運転する際は確認がとても大切です。乗り込む前や乗り込んだ後、不安な場合は適宜車を降りて確認することが大切だと思いました。'},
+  {name:'佐藤風馬',topic:'道交法遵守',text:'事故を起こしてしまうと自身だけではなく、家族や企業にも大きな影響、被害をもたらすことになります。ルールや法令を守りながら走行しなければならないと思いました。'},
+  {name:'三田大夢',topic:'シートベルト',text:'運転するときに自分だけでなく、助手席や後部座先に同乗者の全員がシートベルトを着用しているかちゃんと確認してから車を動かすこと。'},
+  {name:'三田大夢',topic:'出発前確認',text:'乗る前、乗った後に感覚ではなく周囲の確認を目視でしっかり行い、時間をかけてでも安全に車を動かしていきたい。'},
+  {name:'三田大夢',topic:'道交法遵守',text:'連絡が来たり、連絡を取りたいとき運転中に行うのではなく、安全な場所に車を泊めてから行うこと。'},
+  {name:'小葉松将輝',topic:'シートベルト',text:'今までシートベルトはなんとなくつけていたが、つけていると、つけていないとでは被害の差がかなりあったのでシートベルトの重要性を感じた。'},
+  {name:'小葉松将輝',topic:'出発前確認',text:'このように文に書いてあるものに対しては、正解の選択肢を選ぶことができるが、実際に運転する前などは怠ってしまう時があるので徹底したい。'},
+  {name:'小葉松将輝',topic:'道交法遵守',text:'社用車での法令違反は自分だけではなく、会社や会社の人にも迷惑が掛かるのでいつも以上に危機感をもって運転しなければいけないと思った。'},
+  {name:'廣内将剛',topic:'シートベルト',text:'シートベルトは命を繋ぐ線である'},
+  {name:'廣内将剛',topic:'出発前確認',text:'確認は他を傷つけないためにも必要'},
+  {name:'廣内将剛',topic:'道交法遵守',text:'信用を失わないような堅実な運転を心がける'},
+  {name:'忽那航太',topic:'シートベルト',text:'シートベルト適切に着用しないと大きな事故につながることが分かった。運転者に限らず大きな事故を未然に防ぎたい。'},
+  {name:'忽那航太',topic:'出発前確認',text:'乗り込む前に周囲の安全を確認し、駐車する前もできるだけ縁石などの障害物の近くを避け、危険になるリスクを回避する'},
+  {name:'忽那航太',topic:'道交法遵守',text:'自分の事故で、自分だけではなく、会社の信頼にも大きくつながるので気を付けたい。'},
+  {name:'西川智裕',topic:'シートベルト',text:'シートベルトは事故から身を守ってくれるものだと再認識した。しかし正しい着用方法でないと、逆に危険ということも学んだ。'},
+  {name:'西川智裕',topic:'出発前確認',text:'たとえ急いでいたとしても、車体の周りを確認し安全に出発できるよう心掛けたい。'},
+  {name:'西川智裕',topic:'道交法遵守',text:'運転する車は会社の看板を背負っていることを忘れず、安全運転を心掛けたい。'},
+  {name:'難波杏介',topic:'シートベルト',text:'後部座席に座るときはシートベルトをしないときがあったので、後部座席に座ったとしても必ずつけるようにする。'},
+  {name:'難波杏介',topic:'出発前確認',text:'出発前に周囲を確認しておくことで、事故のリスクを減らすことができると思った。'},
+  {name:'難波杏介',topic:'道交法遵守',text:'社用車で事故を起こしてしまうと自分自身も働いている会社にも迷惑をかけてしまうので、漫然と運転せず、法令を守り安全に運転を行う。'},
+  {name:'黒坂悠貴',topic:'シートベルト',text:'普段からシートベルトの着用は正しくしていたが改めて着用することの重要性に気づくことができた。また同乗者にもシートベルトの正しい着用を促していきたいと感じた。'},
+  {name:'黒坂悠貴',topic:'出発前確認',text:'どんなに急いでいたとしても急いでいなくても周囲と進行方向の確認はしていきたいと感じた。'},
+  {name:'黒坂悠貴',topic:'道交法遵守',text:'どのような状況にあっても道路交通法を厳守して社会的信用を脅かしたりなどしないために常に責任感を持って運転をしたい。'},
+  {name:'深田未来',topic:'シートベルト',text:'後部座席に座っていてシートベルトの着用を忘れていることがたまにあるため、気をつけていきたい。'},
+  {name:'深田未来',topic:'出発前確認',text:'車はバイクと比べて死角が多いため、状況の確認は怠らないようにする。'},
+  {name:'深田未来',topic:'道交法遵守',text:'道路交通法の遵守は自分の人生を守ることにも繋がるため、安易な考え方はしないほうがいいと感じた。'},
+  {name:'葭矢淳',topic:'シートベルト',text:'しっかりシートベルトをし、同乗者にも必ず装着させます。'},
+  {name:'葭矢淳',topic:'出発前確認',text:'大丈夫だと思っても乗車する前に周囲の確認し出庫します。'},
+  {name:'葭矢淳',topic:'道交法遵守',text:'法令違反は事故につながるだけでなく会社のイメージも低下させるということを理解して運転します。'},
+  {name:'鶴田京士朗',topic:'シートベルト',text:'後部座席のシートベルト未着用は、前部に座っている同乗者にも被害を与えるということを初めて知った。運転手が、責任をもって同乗者を諭す必要がある。'},
+  {name:'鶴田京士朗',topic:'出発前確認',text:'死角になっている場所は予想で済ませるのではなく、実際に目視で確認してから動作を行う。'},
+  {name:'鶴田京士朗',topic:'道交法遵守',text:'いかなる場合も運転中は、焦る必要はないことを念頭に置く。常に心と時間に余裕をもって行動する。'},
+  {name:'児島翔太',topic:'シートベルト',text:'正直、今までは後部座席に座る際にシートベルトを着用しないことが多かったため、前の座席に座っている人に被害を与えないよう、今後は着用しようと思った。'},
+  {name:'児島翔太',topic:'出発前確認',text:'乗り込む前に、車の周囲の地形などを把握することができるため、発進する際に気を付けるべき物を知ることができるため、積極的に行おうと思った。'},
+  {name:'児島翔太',topic:'道交法遵守',text:'仕事で車を運転する場合は、自身の所属する会社を背負っているという自覚を持ち、責任をもって安全運転に努めようと感じた。また、プライベートで車を運転する際も同様に、事故を起こしてしまった際に実名や勤めている会社が報道されたり、免停で仕事に影響を及ぼすと考えられるため、気を付けて運転しなければならないと感じた。'},
+  {name:'松本愛哉',topic:'シートベルト',text:'シートベルトの正しい締める位置があるとは知らなかったので、今後意識しようと思いました。'},
+  {name:'松本愛哉',topic:'出発前確認',text:'次の予定に遅刻しそうでも乗り込む前に周囲の安全確認して乗り込みます。'},
+  {name:'松本愛哉',topic:'道交法遵守',text:'たとえどんな事故でも会社のイメージダウンにつながるので、会社の一員であることを自覚し、気を引き締めて運転する。'},
+  {name:'山田泰大',topic:'シートベルト',text:'後部座席に乗るときはシートベルトの着用を自分の中で義務づける。また、友人や家族にも着用を促す。'},
+  {name:'山田泰大',topic:'出発前確認',text:'乗り込む前に周囲をしっかり確認するようにする'},
+  {name:'山田泰大',topic:'道交法遵守',text:'ミラーのだけでなく目視で確認をとるようにする。'},
+];
+const DORECO_COMMENTS_DATA=[
+  {name:'佐藤風馬',topic:'山道スリップ',text:'峠道は滑りやすいので注意が必要'},
+  {name:'佐藤風馬',topic:'交差点右折',text:'右左折時は事故が多いので確認作業を怠らずにする'},
+  {name:'佐藤風馬',topic:'巻き込み',text:'右左折時はミラー、目視を徹底する'},
+  {name:'佐藤風馬',topic:'右折逆走',text:'右折レーンの勘違いがあったと思った'},
+  {name:'小葉松将輝',topic:'山道スリップ',text:'曲がる際にスピードを出しすぎていた。'},
+  {name:'小葉松将輝',topic:'交差点右折',text:'直進してくる対向車や横断歩道はもちろん、それ以外の場所でも視野を広く持ち運転する。'},
+  {name:'小葉松将輝',topic:'巻き込み',text:'車側も左折の際に巻き込み確認をもっとしっかりと行うべきだった。もっと速度も落とせたとも思う。自転車側は車がウィンカーを出していたので減速して距離をとるべきだった。'},
+  {name:'小葉松将輝',topic:'右折逆走',text:'初めての道でよく分かっていなかったのかなと思う。ここで曲がろうとしたが道がないことに気づきパニックになった。'},
+  {name:'廣内将剛',topic:'山道スリップ',text:'スピードを出さない'},
+  {name:'廣内将剛',topic:'交差点右折',text:'右折の見えにくいところでは確認して減速しながら右折する。'},
+  {name:'廣内将剛',topic:'巻き込み',text:'左巻き込み確認'},
+  {name:'廣内将剛',topic:'右折逆走',text:'左右後方の確認、場合によっては減速'},
+  {name:'忽那航太',topic:'山道スリップ',text:'スピードの出しすぎには注意しなければならないと感じた。特に、路面の状況が悪い場所では大きな事故にもつながりかねないので最善の注意を払いたい。'},
+  {name:'忽那航太',topic:'交差点右折',text:'右左折で横断歩道を挟む場合には徐行をし、歩行者が見え次第止まれるようにすることが、事故防止につながると感じた。'},
+  {name:'忽那航太',topic:'巻き込み',text:'車側は左折する場合、左に寄せ、左のサイドミラーと目視をし、左折するべきだと感じた。自転車側は、自動車が左のウィンカーを出したタイミングで止まるべきだと感じた。'},
+  {name:'忽那航太',topic:'右折逆走',text:'手前の右折レーンから右折できると勘違いしている。右折する前に進路を確認し、道路標示を理解して走行する必要があると感じた。'},
+  {name:'深田未来',topic:'巻き込み',text:'左折する前に巻き込み確認を怠っていなければ、この事故は防げたかもしれないと思いました。'},
+  {name:'深田未来',topic:'右折逆走',text:'反対車線に進入した車が右折する前にも右折した車がいたため、その様子をしっかり見ていたら車線を間違わなかったかもしれない。'},
+  {name:'葭矢淳',topic:'山道スリップ',text:'スピードの出しすぎとハンドルを切るのが強いからだと思います。'},
+  {name:'葭矢淳',topic:'交差点右折',text:'対向車が通りすぎ、しっかり曲がる方向に歩行者が居ないか確認してからゆっくり右折する。'},
+  {name:'葭矢淳',topic:'巻き込み',text:'前走車はミラーと目視でしっかり巻き込み確認をし、自転車側は車が曲がってくることを想定してすり抜け走行をしない'},
+  {name:'葭矢淳',topic:'右折逆走',text:'出口と入口を間違えていた'},
+  {name:'鶴田京士朗',topic:'山道スリップ',text:'トラックのフロントヘビーな前後重量配分とエンジンブレーキによるリヤの接地荷重の減少、濡れた路面などの原因により、リヤタイヤがスリップしたと考えられる。'},
+  {name:'鶴田京士朗',topic:'交差点右折',text:'交差点の近くにいる歩行者だけでなく、交差点よりも前を歩いている歩行者や自転車にもあらかじめ気を配っておく。交差点への侵入速度を落とす。'},
+  {name:'鶴田京士朗',topic:'巻き込み',text:'前走車は巻き込み防止のためにもっと左側に車体を寄せる必要があった。また、左折前にミラーと目視で自転車等の存在がないかを察知する必要があった。'},
+  {name:'鶴田京士朗',topic:'右折逆走',text:'急いでいたから。'},
+  {name:'児島翔太',topic:'山道スリップ',text:'濡れた路面のカーブ内でブレーキを踏んだことが原因。交通状況だけでなく路面状況も考慮した運転が必要であると感じた。'},
+  {name:'児島翔太',topic:'交差点右折',text:'右折時は車だけでなく、歩行者も来ていないか確認する。停車中の車の隙間から横断しようとしたりということも考えられるため、注意を払わなければならないと感じた。'},
+  {name:'児島翔太',topic:'巻き込み',text:'前走車は、左折前に左後方を確認することと、左側から巻きこまないように車両を左側によせてから左折するべきであると考える。'},
+  {name:'児島翔太',topic:'右折逆走',text:'そこそこスピードを出して右折しているように見えるため、この道路の構造を把握していなかったり、右折の線を確認していなかったりしていたのではないかと感じた。'},
+  {name:'松本愛哉',topic:'山道スリップ',text:'カーブに入る前にもう少しスピードを落とし、スリップしてしまってもブレーキを踏まず、アクセルを踏むといいと思います。焦らずに対処できると事故にならないと思います。'},
+  {name:'松本愛哉',topic:'交差点右折',text:'歩行者や車が来ていないか確認しつつ、すぐ停止できるスピードで安全に右折する。'},
+  {name:'松本愛哉',topic:'巻き込み',text:'前方の車がしっかりと巻き込み確認をしていれば事故にならなかったと思います。'},
+  {name:'松本愛哉',topic:'右折逆走',text:'右折する場所を間違えてしまったのではないかと考えた。'},
+  {name:'山田泰大',topic:'右折逆走',text:'右折の矢印が書かれているところしか見ていなく間違えて反対車線に進入してしまった'},
+];
+
+/* ── テキスト分析データ ── */
+const KW_DATA=[
+  {word:'確認する',count:14,max:14},
+  {word:'会社・信用',count:11,max:14},
+  {word:'シートベルト',count:9,max:14},
+  {word:'後部座席',count:8,max:14},
+  {word:'速度・スピード',count:7,max:14},
+  {word:'左折・右折',count:7,max:14},
+  {word:'歩行者',count:5,max:14},
+  {word:'路面状況',count:4,max:14},
+];
+const THEME_DATA=[
+  {label:'責任・会社意識',count:11,cls:'t1'},
+  {label:'確認・安全行動',count:14,cls:'t2'},
+  {label:'シートベルト',count:9,cls:'t1'},
+  {label:'速度管理',count:7,cls:'t3'},
+  {label:'巻き込み注意',count:6,cls:'t3'},
+  {label:'歩行者保護',count:5,cls:'t2'},
+  {label:'自己課題の自覚',count:3,cls:'t4'},
+  {label:'路面・状況判断',count:4,cls:'t2'},
+];
+const SENTIMENT_DATA=[
+  {cls:'positive',name:'児島翔太（強い責任意識）',quote:'会社を背負っているという自覚を持ち、責任をもって安全運転に努める。プライベートでも事故の影響を意識している。'},
+  {cls:'awareness',name:'鶴田京士朗（新たな気づき）',quote:'後部座席の未着用が前部座席の同乗者にも被害を与えることを初めて知った。'},
+  {cls:'concern',name:'小葉松将輝（課題の自覚）',quote:'文章では正解を選べるが、実際に運転前などは怠ってしまう時がある。知識と行動のギャップを正直に開示。'},
+  {cls:'awareness',name:'西川智裕（深い理解）',quote:'正しい着用方法でないと逆に危険ということも学んだ。表面的でなく本質を理解している。'},
+];
+const ACTION_DATA=[
+  {name:'佐藤風馬',action:'後部座席でも毎回シートベルトを着用する'},
+  {name:'三田大夢',action:'運転中は絶対に連絡操作をしない'},
+  {name:'廣内将剛',action:'信用を失わない堅実な運転を心がける'},
+  {name:'忽那航太',action:'乗り込み前・駐車前に必ず周囲を確認する'},
+  {name:'難波杏介',action:'後部座席でも必ずシートベルトを着用する'},
+  {name:'山田泰大',action:'ミラーだけでなく必ず目視確認を行う'},
+  {name:'松本愛哉',action:'遅刻しそうでも乗り込み前に安全確認を行う'},
+];
+
+/* ── CHART COLORS ── */
+const CC={green:'#4a8c32',greenPale:'#d4e8cc',amber:'#c97a00',red:'#d94a3a',yellow:'#e6b800',text:'rgba(90,122,74,.7)',grid:'rgba(74,140,50,.1)'};
+
+/* ── NAV ── */
+const TITLES={overview:'全体進捗',login:'ログイン状況',doreco:'ドラレコ動画',detail:'個人詳細',comments:'感想・コメント'};
+function showPanel(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('topbar-title').textContent=TITLES[id];
+}
+
+/* ── CHARTS ── */
+new Chart(document.getElementById('chartCourses'),{type:'bar',data:{labels:['スライド講座','○×テスト','タッチで危険予測','ドラレコ動画'],datasets:[{label:'完了',data:[14,14,14,5],backgroundColor:CC.green,borderRadius:5},{label:'未完了',data:[0,0,0,9],backgroundColor:CC.red,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{color:CC.text,font:{size:11}},grid:{color:CC.grid}},y:{stacked:true,max:14,ticks:{color:CC.text,stepSize:2},grid:{color:CC.grid}}}}});
+
+new Chart(document.getElementById('chartDist'),{type:'doughnut',data:{labels:['全完了（4本）','部分視聴（1-3本）','未視聴（0本）'],datasets:[{data:[5,4,6],backgroundColor:[CC.green,CC.amber,CC.red],borderWidth:2,borderColor:'#fff',hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}名`}}}}});
+
+const STORES_SHORT=Object.assign({},STORES,{'三田大夢':'宇都宮店'});
+const dS=NAMES.slice().sort((a,b)=>DORECO[b]-DORECO[a]);
+const dSLabels=dS.map(n=>`${STORES_SHORT[n]}　${n}`);
+new Chart(document.getElementById('chartDorecoBar'),{type:'bar',data:{labels:dSLabels,datasets:[{label:'視聴済み',data:dS.map(n=>DORECO[n]),backgroundColor:dS.map(n=>DORECO[n]===4?CC.green:DORECO[n]===0?CC.red:CC.amber),borderRadius:4},{label:'未視聴',data:dS.map(n=>4-DORECO[n]),backgroundColor:CC.greenPale,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,max:4,ticks:{color:CC.text,stepSize:1},grid:{color:CC.grid}},y:{stacked:true,ticks:{color:CC.text,font:{size:11},autoSkip:false}}}}});
+
+// 最終ログイン日を「5/1からの日数」に変換して棒グラフ化
+const LOGIN_DATE_DAYS={'佐藤風馬':30,'三田大夢':25,'小葉松将輝':31,'廣内将剛':20,'忽那航太':30,'西川智裕':25,'難波杏介':18,'黒坂悠貴':20,'深田未来':28,'葭矢淳':27,'鶴田京士朗':28,'児島翔太':16,'松本愛哉':31,'山田泰大':21};
+const lS=NAMES.slice().sort((a,b)=>LOGIN_DATE_DAYS[b]-LOGIN_DATE_DAYS[a]);
+const loginColors2=lS.map(n=>LOGIN_DATE_DAYS[n]>=30?CC.green:LOGIN_DATE_DAYS[n]>=25?CC.amber:CC.red);
+new Chart(document.getElementById('chartLogin'),{type:'bar',data:{labels:lS.map(n=>`${STORES_SHORT[n]}　${n}`),datasets:[{label:'最終ログイン（5/1起算日数）',data:lS.map(n=>LOGIN_DATE_DAYS[n]),backgroundColor:loginColors2,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const days=ctx.raw;const m=days>=31?'06/01':days>=30?'05/31':days>=28?'05/28-29':days>=25?'05/25-26':days>=21?'05/21':days>=20?'05/20':days>=18?'05/18-19':'05/17';return `最終ログイン: 2026/${m}`;}}}},scales:{x:{max:31,ticks:{display:false},grid:{color:CC.grid}},y:{ticks:{color:CC.text,font:{size:11}}}}}});
+
+new Chart(document.getElementById('chartTheme'),{type:'bar',data:{labels:THEME_DATA.map(t=>t.label),datasets:[{data:THEME_DATA.map(t=>t.count),backgroundColor:THEME_DATA.map(t=>t.cls==='t1'?CC.green:t.cls==='t2'?CC.yellow:t.cls==='t3'?CC.amber:CC.red),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:CC.text,stepSize:2},grid:{color:CC.grid}},y:{ticks:{color:CC.text,font:{size:11}}}}}});
+
+/* ── LOGIN TABLE ── */
+const tbody=document.getElementById('loginTableBody');
+NAMES.slice().sort((a,b)=>LOGINS[b]-LOGINS[a]).forEach(n=>{
+  const cnt=LOGINS[n],cls=cnt>=15?'green':cnt>=8?'amber':'red',label=cnt>=15?'達成':cnt>=8?'要注目':'要確認',color=cnt>=15?CC.green:cnt>=8?CC.amber:CC.red;
+  tbody.innerHTML+=`<tr><td style="font-weight:600">${n}</td><td style="color:var(--text2);font-size:12px">${STORES[n]}</td><td><div class="count-bar-wrap"><div class="count-bar" style="width:${Math.round(cnt/20*130)}px;background:${color}"></div><span class="count-num" style="color:${color}">${cnt}</span></div></td><td style="font-family:var(--mono);font-size:12px;color:var(--text2)">2026/${LAST_LOGIN[n]}</td><td><span class="status-badge ${cls}">${label}</span></td></tr>`;
+});
+
+/* ── DORECO CARDS ── */
+const dEl=document.getElementById('dorecoCards');
+NAMES.forEach(n=>{
+  const cnt=DORECO[n],cls=cnt===4?'all-ok':cnt===0?'danger':'warn',pc=cnt===4?'green':cnt===0?'red':'amber';
+  const improved=DORECO_IMPROVED.includes(n);
+  const partialImproved=DORECO_PARTIAL_IMPROVED.includes(n);
+  const badge=improved?'<span style="font-size:13px;background:#fff3b0;border:1px solid #e6b800;border-radius:4px;padding:2px 8px;color:#b58c00;font-weight:600;margin-left:6px">🏆 今回完了！</span>':partialImproved?'<span style="font-size:13px;background:#edf5e8;border:1px solid #c7e6b4;border-radius:4px;padding:2px 8px;color:#2d7a1f;font-weight:600;margin-left:6px">📈 改善中</span>':'';
+  dEl.innerHTML+=`<div class="pcard ${cls}"><div class="pcard-name" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">${n}${badge}</div><div class="pcard-store">${STORES[n]}</div>${DORECO_VIDEOS.map((v,i)=>`<div class="video-row"><span class="video-label">${v}</span><span class="${i<cnt?'check-done':'check-none'}">${i<cnt?'✓ 済':'― 未'}</span></div>`).join('')}<span class="login-pill ${pc}" style="margin-top:10px">${cnt} / 4本完了</span></div>`;
+});
+
+/* ── PERSON CARDS ── */
+const pEl=document.getElementById('personCards');
+NAMES.forEach(n=>{
+  const slide=SLIDE_OK[n],doreco=DORECO[n],login=LOGINS[n];
+  const cls=slide===3&&doreco===4?'all-ok':doreco===0?'danger':'warn';
+  const days=LOGIN_DATE_DAYS[n]||0;
+  const lc=days>=30?'green':days>=25?'amber':'red',ll=days>=30?'直近ログイン':days>=25?'要注目':'最終ログイン古い';
+  const dc=doreco===4?'var(--green)':doreco===0?'var(--red)':'var(--amber)';
+  pEl.innerHTML+=`<div class="pcard ${cls}"><div class="pcard-name">${n}</div><div class="pcard-store">${STORES[n]}</div><div class="prog-row"><span class="prog-label">スライド</span><div class="prog-track"><div class="prog-fill" style="width:${Math.round(slide/3*100)}%;background:var(--green)"></div></div><span class="prog-val">${slide}/3</span></div><div class="prog-row"><span class="prog-label">○×テスト</span><div class="prog-track"><div class="prog-fill" style="width:100%;background:var(--green)"></div></div><span class="prog-val" style="color:var(--green);font-size:9px">合格</span></div><div class="prog-row"><span class="prog-label">タッチ</span><div class="prog-track"><div class="prog-fill" style="width:100%;background:var(--green)"></div></div><span class="prog-val" style="color:var(--green);font-size:9px">済</span></div><div class="prog-row"><span class="prog-label">ドラレコ</span><div class="prog-track"><div class="prog-fill" style="width:${Math.round(doreco/4*100)}%;background:${dc}"></div></div><span class="prog-val">${doreco}/4</span></div><span class="login-pill ${lc}">ログイン ${login}回 ${ll}</span></div>`;
+});
+
+/* ── TEXT ANALYSIS ── */
+const kwEl=document.getElementById('kwBars');
+KW_DATA.forEach(d=>{
+  const pct=Math.round(d.count/d.max*100);
+  kwEl.innerHTML+=`<div class="kw-row"><span class="kw-word">${d.word}</span><div class="kw-track"><div class="kw-fill" style="width:${pct}%;background:${d.count>=10?CC.green:d.count>=7?CC.amber:CC.red}"></div></div><span class="kw-count">${d.count}</span></div>`;
+});
+
+const tpEl=document.getElementById('themePills');
+THEME_DATA.forEach(d=>{
+  tpEl.innerHTML+=`<span class="theme-pill ${d.cls}">${d.label}<span class="theme-pill-count">${d.count}</span></span>`;
+});
+
+const sentEl=document.getElementById('sentimentList');
+SENTIMENT_DATA.forEach(d=>{
+  sentEl.innerHTML+=`<div class="sentiment-row"><span class="sent-dot ${d.cls}"></span><div><div class="sent-name">${d.name}</div><div class="sent-quote">${d.quote}</div></div></div>`;
+});
+
+const actEl=document.getElementById('actionList');
+ACTION_DATA.forEach(d=>{
+  actEl.innerHTML+=`<div class="sentiment-row"><span class="sent-dot positive"></span><div><div class="sent-name">${d.name}</div><div class="sent-quote">${d.action}</div></div></div>`;
+});
+
+/* ── SLIDE DETAIL DATA ── */
+const SLIDE_DETAIL = {
+  '佐藤風馬':  [{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '三田大夢':  [{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '小葉松将輝':[{rikai:'ＮＧ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '廣内将剛':  [{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '忽那航太':  [{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '西川智裕':  [{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '難波杏介':  [{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '黒坂悠貴':  [{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '深田未来':  [{rikai:'ＮＧ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '葭矢淳':    [{rikai:'ＯＫ',jisshi:2},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '鶴田京士朗':[{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '児島翔太':  [{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '松本愛哉':  [{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+  '山田泰大':  [{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1},{rikai:'ＯＫ',jisshi:1}],
+};
+const TEST_DETAIL = {
+  '佐藤風馬':  {t1:{jisshi:1},t2:{jisshi:1},gokaku:1},
+  '三田大夢':  {t1:{jisshi:1},t2:{jisshi:1},gokaku:1},
+  '小葉松将輝':{t1:{jisshi:6},t2:{jisshi:2},gokaku:1},
+  '廣内将剛':  {t1:{jisshi:1},t2:{jisshi:1},gokaku:1},
+  '忽那航太':  {t1:{jisshi:1},t2:{jisshi:1},gokaku:1},
+  '西川智裕':  {t1:{jisshi:1},t2:{jisshi:1},gokaku:1},
+  '難波杏介':  {t1:{jisshi:1},t2:{jisshi:1},gokaku:1},
+  '黒坂悠貴':  {t1:{jisshi:2},t2:{jisshi:2},gokaku:1},
+  '深田未来':  {t1:{jisshi:1},t2:{jisshi:1},gokaku:1},
+  '葭矢淳':    {t1:{jisshi:1},t2:{jisshi:1},gokaku:2},
+  '鶴田京士朗':{t1:{jisshi:1},t2:{jisshi:1},gokaku:2},
+  '児島翔太':  {t1:{jisshi:1},t2:{jisshi:1},gokaku:1},
+  '松本愛哉':  {t1:{jisshi:2},t2:{jisshi:2},gokaku:1},
+  '山田泰大':  {t1:{jisshi:2},t2:{jisshi:1},gokaku:3},
+};
+const TOUCH_DETAIL = {
+  '佐藤風馬':2,'三田大夢':4,'小葉松将輝':1,'廣内将剛':2,'忽那航太':1,
+  '西川智裕':5,'難波杏介':3,'黒坂悠貴':1,'深田未来':2,'葭矢淳':6,
+  '鶴田京士朗':1,'児島翔太':1,'松本愛哉':4,'山田泰大':5
+};
+
+/* ── SLIDE DETAIL TABLE ── */
+const slideBody=document.getElementById('slideDetailBody');
+NAMES.forEach(n=>{
+  const d=SLIDE_DETAIL[n];
+  const okCount=d.filter(x=>x.rikai==='ＯＫ').length;
+  const totalJisshi=d.reduce((s,x)=>s+x.jisshi,0);
+  function cell(x){
+    const ng=x.rikai==='ＮＧ';
+    const color=ng?CC.amber:CC.green;
+    return `<td style="text-align:center"><span style="font-weight:600;color:${color}">${x.rikai}</span> <span style="color:var(--text3);font-size:12px">/ ${x.jisshi}回</span></td>`;
+  }
+  slideBody.innerHTML+=`<tr><td style="font-weight:600">${n}</td><td style="color:var(--text2);font-size:13px">${STORES[n]}</td>${d.map(cell).join('')}<td style="text-align:center;font-weight:600;color:${okCount===3?CC.green:CC.amber}">${okCount}/3 教材<br><span style="font-size:12px;font-weight:400;color:var(--text3)">計${totalJisshi}回</span></td></tr>`;
+});
+
+/* ── TEST DETAIL TABLE ── */
+const testBody=document.getElementById('testDetailBody');
+NAMES.forEach(n=>{
+  const d=TEST_DETAIL[n];
+  function jisshiCell(v){const warn=v>1;return `<span style="color:${warn?CC.amber:CC.green};font-weight:600">${v}回</span>`;}
+  function scoreCell(){return `<span style="color:${CC.green};font-weight:600">100点</span>`;}
+  const gCell=d.gokaku>1?`<span style="color:${CC.amber};font-weight:600">${d.gokaku}回目</span>`:`<span style="color:${CC.green};font-weight:600">1回目</span>`;
+  testBody.innerHTML+=`<tr>
+    <td style="font-weight:600">${n}</td>
+    <td style="color:var(--text2);font-size:13px">${STORES[n]}</td>
+    <td style="text-align:center">${jisshiCell(d.t1.jisshi)}</td>
+    <td style="text-align:center">${scoreCell()}</td>
+    <td style="text-align:center">${jisshiCell(d.t2.jisshi)}</td>
+    <td style="text-align:center">${scoreCell()}</td>
+    <td style="text-align:center">${gCell}</td>
+    <td style="text-align:center"><span class="status-badge green">合格</span></td>
+  </tr>`;
+});
+
+/* ── TOUCH DETAIL TABLE ── */
+const touchBody=document.getElementById('touchDetailBody');
+NAMES.forEach(n=>{
+  const kai=TOUCH_DETAIL[n];
+  const kaiColor=kai<=2?CC.green:kai<=4?CC.amber:CC.red;
+  touchBody.innerHTML+=`<tr>
+    <td style="font-weight:600">${n}</td>
+    <td style="color:var(--text2);font-size:13px">${STORES[n]}</td>
+    <td style="text-align:center"><span style="color:${CC.green};font-weight:600">✓ 済</span></td>
+    <td style="text-align:center"><span style="color:${CC.green};font-weight:600">✓ 済</span></td>
+    <td style="text-align:center"><span style="color:${kaiColor};font-weight:600">${kai}回目</span></td>
+  </tr>`;
+});
+
+/* ── PERSON COMMENT CARDS ── */
+const pcEl=document.getElementById('personComments');
+NAMES.forEach(n=>{
+  const slideItems=SLIDE_COMMENTS_DATA.filter(c=>c.name===n);
+  const dorecoItems=DORECO_COMMENTS_DATA.filter(c=>c.name===n);
+  if(slideItems.length===0&&dorecoItems.length===0)return;
+  const initials=n.slice(0,1);
+  let html=`<div class="pc-card">
+    <div class="pc-card-header">
+      <div class="pc-avatar">${initials}</div>
+      <div><div class="pc-name">${n}</div><div class="pc-store">${STORES[n]}</div></div>
+    </div>
+    <div class="pc-body">`;
+  slideItems.forEach(c=>{
+    html+=`<div class="pc-entry"><span class="pc-entry-tag">📖 スライド｜${c.topic}</span><div class="pc-entry-text">${c.text}</div></div>`;
+  });
+  if(dorecoItems.length>0){
+    dorecoItems.forEach(c=>{
+      html+=`<div class="pc-entry"><span class="pc-entry-tag doreco">📹 ドラレコ｜${c.topic}</span><div class="pc-entry-text">${c.text}</div></div>`;
+    });
+  } else {
+    html+=`<div class="pc-entry"><span class="pc-entry-tag doreco" style="opacity:.5">📹 ドラレコ</span><div class="pc-entry-text" style="color:var(--text3);font-style:italic">未視聴のためコメントなし</div></div>`;
+  }
+  html+=`</div></div>`;
+  pcEl.innerHTML+=html;
+});
+</script>
+</body>
+</html>
