@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026年度 OJT 受講状況ダッシュボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg:#f5f9f2; --bg2:#ffffff; --bg3:#edf5e8;
+  --border:rgba(74,140,50,.12); --border2:rgba(74,140,50,.25);
+  --green-dark:#2d7a1f; --green:#4a8c32; --green-mid:#6aab4a;
+  --green-light:#c7e6b4; --green-pale:#edf5e8;
+  --yellow-dark:#b58c00; --yellow:#e6b800; --yellow-mid:#f5d000;
+  --yellow-light:#fff3b0; --yellow-pale:#fffbeb;
+  --text:#1a2e14; --text2:#5a7a4a; --text3:#9ab885;
+  --red:#d94a3a; --red-pale:#fdf0ee;
+  --amber:#c97a00; --amber-pale:#fff4e0;
+  --mono:'DM Mono',monospace; --sans:'Noto Sans JP',sans-serif;
+  --r-sm:6px; --r-md:10px; --r-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.7}
+body::before{content:'';position:fixed;top:-120px;right:-120px;width:600px;height:600px;background:radial-gradient(circle,rgba(106,171,74,.08) 0%,transparent 70%);pointer-events:none;z-index:0}
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh;position:relative;z-index:1}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--green-dark);position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;box-shadow:2px 0 12px rgba(45,122,31,.15)}
+.logo{padding:22px 20px 20px;background:rgba(0,0,0,.15);border-bottom:1px solid rgba(255,255,255,.1)}
+.wakaba-icon{width:36px;height:36px;margin-bottom:10px;display:block}
+.logo-tag{font-size:11px;font-family:var(--mono);color:var(--yellow-mid);letter-spacing:.12em;display:block;margin-bottom:3px}
+.logo-title{font-size:16px;font-weight:700;color:#fff;line-height:1.3}
+.logo-sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:3px}
+.nav-section{font-size:11px;font-family:var(--mono);color:rgba(255,255,255,.3);letter-spacing:.1em;padding:18px 20px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;cursor:pointer;color:rgba(255,255,255,.65);font-size:14px;transition:all .15s;border-left:3px solid transparent;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.active{color:#fff;background:rgba(255,255,255,.12);border-left-color:var(--yellow-mid);font-weight:500}
+.nav-icon{width:17px;height:17px;flex-shrink:0;opacity:.8}
+.nav-item.active .nav-icon{opacity:1}
+.nav-badge{margin-left:auto;font-size:11px;font-family:var(--mono);background:var(--red);color:#fff;padding:2px 8px;border-radius:10px}
+.sidebar-footer{margin-top:auto;padding:14px 20px;border-top:1px solid rgba(255,255,255,.1);font-size:12px;color:rgba(255,255,255,.4)}
+.date-chip{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.1);padding:3px 10px;border-radius:4px;display:inline-block;margin-top:5px;border:1px solid rgba(255,255,255,.15)}
+
+/* ── TOPBAR ── */
+.main{overflow-x:hidden}
+.topbar{padding:14px 32px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:10;box-shadow:0 1px 6px rgba(45,122,31,.06);gap:16px}
+.topbar-left{}
+.topbar-title{font-size:16px;font-weight:700;color:var(--green-dark)}
+.topbar-sub{font-size:13px;color:var(--text2);margin-top:1px}
+
+/* ── ★ RULE BANNER (大型) ── */
+.rule-banner{
+  display:flex;align-items:center;gap:14px;
+  background:var(--yellow-pale);
+  border:2px solid var(--yellow);
+  border-radius:var(--r-lg);
+  padding:12px 22px;
+  flex-shrink:0;
+}
+.rule-banner-icon{font-size:28px;line-height:1;flex-shrink:0}
+.rule-banner-body{}
+.rule-banner-label{font-size:11px;font-family:var(--mono);color:var(--yellow-dark);letter-spacing:.08em;font-weight:600;margin-bottom:2px}
+.rule-banner-main{font-size:17px;font-weight:700;color:var(--yellow-dark);line-height:1.2}
+.rule-banner-sub{font-size:12px;color:var(--amber);margin-top:2px}
+.rule-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--yellow);margin-right:6px;animation:pulse 2s ease-in-out infinite;vertical-align:middle}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+/* ── SEGMENT TABS ── */
+.seg-tabs{display:flex;gap:6px;margin-left:auto;background:var(--green-pale);border:1px solid var(--green-light);border-radius:var(--r-md);padding:4px}
+.seg-tab{font-size:13px;font-weight:600;color:var(--green-dark);padding:7px 18px;border-radius:7px;cursor:pointer;user-select:none;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:7px;border:1px solid transparent}
+.seg-tab:hover{background:rgba(74,140,50,.1)}
+.seg-tab.active{background:var(--green);color:#fff;box-shadow:0 1px 4px rgba(45,122,31,.25)}
+.seg-tab-count{font-family:var(--mono);font-size:11px;opacity:.75;font-weight:500}
+.seg-tab.active .seg-tab-count{opacity:.9}
+
+/* ── PANELS ── */
+.panel{display:none}
+.panel.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.content{padding:28px 32px}
+
+/* ── ★ ALERT BANNER (大型) ── */
+.alert-banner{
+  background:var(--red-pale);
+  border:2px solid rgba(217,74,58,.35);
+  border-left:6px solid var(--red);
+  border-radius:var(--r-lg);
+  padding:18px 22px;
+  display:flex;align-items:flex-start;gap:16px;
+  margin-bottom:24px;
+}
+.alert-banner-icon{font-size:30px;flex-shrink:0;line-height:1;margin-top:2px}
+.alert-banner-title{font-size:18px;font-weight:700;color:var(--red);margin-bottom:6px}
+.alert-banner-body{font-size:14px;color:#b03020;line-height:1.8}
+.alert-banner-body strong{font-weight:700;color:var(--red)}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(45,122,31,.05);transition:box-shadow .2s}
+.kpi:hover{box-shadow:0 3px 10px rgba(45,122,31,.1)}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 var(--r-lg) var(--r-lg)}
+.kpi.green::after{background:var(--green)}.kpi.yellow::after{background:var(--yellow)}.kpi.red::after{background:var(--red)}.kpi.amber::after{background:var(--amber)}
+.kpi-label{font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500}
+.kpi-val{font-size:30px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:5px}
+.kpi.green .kpi-val{color:var(--green)}.kpi.yellow .kpi-val{color:var(--yellow-dark)}.kpi.red .kpi-val{color:var(--red)}.kpi.amber .kpi-val{color:var(--amber)}
+.kpi-sub{font-size:12px;color:var(--text3);font-family:var(--mono)}
+
+/* ── SECTION HEAD ── */
+.section-head{display:flex;align-items:center;gap:10px;margin:28px 0 14px}
+.section-tag{font-size:11px;font-family:var(--mono);color:var(--green-dark);background:var(--green-pale);border:1px solid var(--green-light);padding:3px 10px;border-radius:3px;letter-spacing:.08em;font-weight:600}
+.section-title{font-size:15px;font-weight:600;color:var(--text)}
+
+/* ── CHART CARDS ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;box-shadow:0 1px 4px rgba(45,122,31,.05)}
+.chart-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px}
+.chart-wrap{position:relative}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text2);margin-bottom:12px;font-family:var(--mono)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* ── PERSON CARDS ── */
+.person-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.pcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;transition:box-shadow .2s,transform .15s;border-top-width:3px;box-shadow:0 1px 4px rgba(45,122,31,.05)}
+.pcard:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(45,122,31,.12)}
+.pcard.all-ok{border-top-color:var(--green)}.pcard.warn{border-top-color:var(--amber)}.pcard.danger{border-top-color:var(--red)}
+.pcard-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.pcard-store{font-size:12px;color:var(--text2);margin-bottom:12px}
+.prog-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.prog-label{font-size:11px;color:var(--text3);width:70px;flex-shrink:0;font-family:var(--mono)}
+.prog-track{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px}
+.prog-val{font-size:11px;color:var(--text3);font-family:var(--mono);width:28px;text-align:right;flex-shrink:0}
+.login-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-family:var(--mono);padding:4px 11px;border-radius:20px;margin-top:10px;font-weight:500}
+.login-pill.green{background:var(--green-pale);color:var(--green-dark);border:1px solid var(--green-light)}
+.login-pill.amber{background:var(--amber-pale);color:var(--amber);border:1px solid #f5d090}
+.login-pill.red{background:var(--red-pale);color:var(--red);border:1px solid #f5c0b8}
+
+/* ── LOGIN TABLE ── */
+.login-table{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;width:100%;border-collapse:collapse;box-shadow:0 1px 4px rgba(45,122,31,.05)}
+.login-table th{background:var(--green-pale);font-size:12px;font-family:var(--mono);color:var(--green-dark);padding:11px 16px;text-align:left;letter-spacing:.04em;border-bottom:1px solid var(--border2);font-weight:600}
+.login-table td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:14px;color:var(--text)}
+.login-table tr:last-child td{border-bottom:none}
+.login-table tr:hover td{background:var(--green-pale)}
+.count-bar-wrap{display:flex;align-items:center;gap:10px}
+.count-bar{height:7px;border-radius:3px;flex-shrink:0}
+.count-num{font-family:var(--mono);font-size:14px;font-weight:600;min-width:28px}
+.status-badge{font-size:11px;font-family:var(--mono);padding:3px 10px;border-radius:3px;font-weight:600}
+.status-badge.green{background:var(--green-pale);color:var(--green-dark);border:1px solid var(--green-light)}
+.status-badge.amber{background:var(--amber-pale);color:var(--amber);border:1px solid #f5d090}
+.status-badge.red{background:var(--red-pale);color:var(--red);border:1px solid #f5c0b8}
+
+/* ── DORECO VIDEO ROWS ── */
+.video-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px}
+.video-label{color:var(--text2);flex:1;font-size:12px}
+.check-done{color:var(--green);font-weight:700}
+.check-none{color:var(--text3)}
+
+/* ── COMMENTS ── */
+.comment-list{display:flex;flex-direction:column;gap:10px}
+.citem{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 20px;transition:box-shadow .2s;box-shadow:0 1px 4px rgba(45,122,31,.04)}
+.citem:hover{box-shadow:0 3px 10px rgba(45,122,31,.1)}
+.citem-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.citem-name{font-size:14px;font-weight:700;color:var(--text)}
+.citem-store{font-size:12px;color:var(--text3)}
+.citem-tag{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:3px;background:var(--yellow-pale);color:var(--yellow-dark);border:1px solid #e6d070;margin-left:auto;font-weight:500}
+.citem-text{font-size:14px;color:var(--text2);line-height:1.8}
+
+/* ── ★ TEXT ANALYSIS ── */
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.analysis-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;box-shadow:0 1px 4px rgba(45,122,31,.05)}
+.analysis-card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.analysis-card-title span{font-size:15px}
+/* keyword frequency bars */
+.kw-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.kw-word{font-size:13px;color:var(--text);width:120px;flex-shrink:0;font-weight:500}
+.kw-track{flex:1;height:9px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.kw-fill{height:100%;border-radius:4px;background:var(--green)}
+.kw-count{font-size:12px;font-family:var(--mono);color:var(--text2);width:24px;text-align:right;flex-shrink:0}
+/* sentiment dots */
+.sentiment-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.sentiment-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.sent-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.sent-dot.positive{background:var(--green)}
+.sent-dot.awareness{background:var(--yellow)}
+.sent-dot.concern{background:var(--amber)}
+.sent-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.sent-quote{font-size:13px;color:var(--text2);line-height:1.7}
+/* theme pills */
+.theme-wrap{display:flex;flex-wrap:wrap;gap:8px}
+.theme-pill{font-size:13px;padding:5px 13px;border-radius:20px;font-weight:500;cursor:default}
+.theme-pill.t1{background:var(--green-pale);color:var(--green-dark);border:1px solid var(--green-light)}
+.theme-pill.t2{background:var(--yellow-pale);color:var(--yellow-dark);border:1px solid #e6d070}
+.theme-pill.t3{background:var(--amber-pale);color:var(--amber);border:1px solid #f5d090}
+.theme-pill.t4{background:var(--red-pale);color:var(--red);border:1px solid #f5c0b8}
+.theme-pill-count{font-size:11px;font-family:var(--mono);margin-left:4px;opacity:.7}
+/* insight box */
+.insight-box{background:var(--green-pale);border:1px solid var(--green-light);border-radius:var(--r-md);padding:16px 18px;margin-bottom:16px}
+.insight-box-title{font-size:12px;font-family:var(--mono);color:var(--green-dark);font-weight:600;letter-spacing:.06em;margin-bottom:8px}
+.insight-box ul{padding-left:18px}
+.insight-box li{font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:5px}
+.insight-box li strong{color:var(--text);font-weight:600}
+
+/* ── PERSON COMMENT CARD ── */
+.person-comment-grid{display:flex;flex-direction:column;gap:16px}
+.pc-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 1px 4px rgba(45,122,31,.05);transition:box-shadow .2s}
+.pc-card:hover{box-shadow:0 4px 14px rgba(45,122,31,.1)}
+.pc-card-header{display:flex;align-items:center;gap:14px;padding:14px 20px;background:var(--green-pale);border-bottom:1px solid var(--border)}
+.pc-avatar{width:40px;height:40px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}
+.pc-name{font-size:16px;font-weight:700;color:var(--text)}
+.pc-store{font-size:13px;color:var(--text2);margin-top:1px}
+.pc-body{padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.pc-entry{display:flex;gap:12px;align-items:flex-start}
+.pc-entry-tag{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:3px;background:var(--yellow-pale);color:var(--yellow-dark);border:1px solid #e6d070;font-weight:600;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.pc-entry-tag.doreco{background:var(--green-pale);color:var(--green-dark);border-color:var(--green-light)}
+.pc-entry-text{font-size:14px;color:var(--text2);line-height:1.75}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--green-light);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ════ SIDEBAR ════ -->
+<nav class="sidebar">
+<div class="logo">
+    <svg class="wakaba-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="18,3 6,30 18,24 30,30" fill="#f5d000" stroke="#b58c00" stroke-width="1.2" stroke-linejoin="round"/>
+      <polygon points="18,10 10,30 18,26 26,30" fill="#4a8c32" stroke="#2d7a1f" stroke-width="1" stroke-linejoin="round"/>
+    </svg>
+    <span class="logo-tag" id="logoTag"></span>
+    <div class="logo-title">OJT<br>受講ダッシュボード</div>
+    <div class="logo-sub" id="logoSub"></div>
+  </div>
+  <div class="nav-section">MENU</div>
+  <div class="nav-item active" onclick="showPanel('overview',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    全体進捗
+  </div>
+  <div class="nav-item" onclick="showPanel('login',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+    ログイン状況
+  </div>
+  <div class="nav-item" onclick="showPanel('doreco',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+    ドラレコ動画
+    <span class="nav-badge" id="dorecoNavBadge" style="display:none">要対応</span>
+  </div>
+  <div class="nav-item" onclick="showPanel('detail',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    個人詳細
+  </div>
+  <div class="nav-item" onclick="showPanel('comments',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    感想・コメント
+  </div>
+  <div class="sidebar-footer">
+    集計日
+    <div class="date-chip" id="collectDate"></div>
+  </div>
+</nav>
+
+<!-- ════ MAIN ════ -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="topbar-title">全体進捗</div>
+      <div class="topbar-sub" id="topbarSub"></div>
+    </div>
+    <div class="seg-tabs" id="segTabs"></div>
+    <div class="rule-banner">
+      <div class="rule-banner-icon">🚗</div>
+      <div class="rule-banner-body">
+        <div class="rule-banner-label"><span class="rule-dot"></span>COMPANY RULE</div>
+        <div class="rule-banner-main" id="ruleMain"></div>
+        <div class="rule-banner-sub" id="ruleSub"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="panel-overview">
+    <div class="content">
+      <div id="overviewAlert"></div>
+      <div class="kpi-grid" id="kpiGrid"></div>
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="chart-title">講座別 完了 / 未完了（人数）</div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#4a8c32"></span>完了</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#d94a3a"></span>未完了</div>
+          </div>
+          <div class="chart-wrap" style="height:200px"><canvas id="chartCourses" role="img" aria-label="講座別完了状況"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" id="distTitle"></div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#4a8c32"></span>全完了</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#c97a00"></span>部分視聴</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#d94a3a"></span>未視聴</div>
+          </div>
+          <div class="chart-wrap" style="height:200px"><canvas id="chartDist" role="img" aria-label="ドラレコ視聴分布"></canvas></div>
+        </div>
+      </div>
+      <div class="section-head">
+        <span class="section-tag">DORECO</span>
+        <span class="section-title" id="dorecoBarTitle"></span>
+      </div>
+      <div class="chart-card">
+        <div class="legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#4a8c32"></span>視聴済み</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#d4e8cc"></span>未視聴</div>
+        </div>
+        <div class="chart-wrap" style="height:420px"><canvas id="chartDorecoBar" role="img" aria-label="ドラレコ個人別視聴数"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="panel" id="panel-login">
+    <div class="content">
+      <div class="kpi-grid" id="loginKpiGrid"></div>
+      <div class="chart-card" style="margin-bottom:20px">
+        <div class="chart-title" id="loginChartTitle">ログイン回数（多い順）</div>
+        <div class="legend" id="loginLegend"></div>
+        <div id="loginPaceNote" style="font-size:12px;color:var(--text2);margin:2px 0 6px"></div>
+        <div class="chart-wrap" style="height:400px"><canvas id="chartLogin" role="img" aria-label="ログイン回数棒グラフ"></canvas></div>
+      </div>
+      <div class="section-head"><span class="section-tag">TABLE</span><span class="section-title">ログイン詳細一覧</span></div>
+      <table class="login-table">
+        <thead><tr><th>氏名</th><th>所属店舗</th><th>ログイン回数</th><th>最終ログイン</th><th>ステータス</th></tr></thead>
+        <tbody id="loginTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DORECO -->
+  <div class="panel" id="panel-doreco">
+    <div class="content">
+      <div id="dorecoAlert"></div>
+      <div class="section-head"><span class="section-tag">STATUS</span><span class="section-title">個人別ドラレコ視聴状況</span></div>
+      <div class="person-grid" id="dorecoCards"></div>
+    </div>
+  </div>
+
+  <!-- DETAIL -->
+  <div class="panel" id="panel-detail">
+    <div class="content">
+      <div class="section-head"><span class="section-tag">ALL</span><span class="section-title">個人別 全講座進捗</span></div>
+      <div class="person-grid" id="personCards"></div>
+      <div class="section-head" style="margin-top:32px">
+        <span class="section-tag">SLIDE</span>
+        <span class="section-title" id="slideDetailTitle"></span>
+      </div>
+      <table class="login-table"><thead id="slideDetailHead"></thead><tbody id="slideDetailBody"></tbody></table>
+      <div class="section-head" style="margin-top:32px">
+        <span class="section-tag">TEST</span>
+        <span class="section-title" id="testDetailTitle"></span>
+      </div>
+      <table class="login-table"><thead id="testDetailHead"></thead><tbody id="testDetailBody"></tbody></table>
+      <div class="section-head" style="margin-top:32px">
+        <span class="section-tag">TOUCH</span>
+        <span class="section-title" id="touchDetailTitle"></span>
+      </div>
+      <table class="login-table">
+        <thead><tr><th>氏名</th><th>店舗</th><th>動画閲覧</th><th>解説読了</th><th>正解したのは何回目</th></tr></thead>
+        <tbody id="touchDetailBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- COMMENTS -->
+  <div class="panel" id="panel-comments">
+    <div class="content">
+      <div class="section-head"><span class="section-tag">ANALYSIS</span><span class="section-title">感想・コメント テキスト分析</span></div>
+      <div class="insight-box">
+        <div class="insight-box-title">📊 AI分析サマリー</div>
+        <ul id="insightList"></ul>
+      </div>
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-card-title"><span>🔤</span>キーワード出現頻度（全コメント）</div>
+          <div id="kwBars"></div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-card-title"><span>🏷️</span>コメントのテーマ分類</div>
+          <div class="theme-wrap" id="themePills"></div>
+          <div style="margin-top:16px"><div class="chart-wrap" style="height:180px"><canvas id="chartTheme" role="img" aria-label="テーマ別コメント分布"></canvas></div></div>
+        </div>
+      </div>
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-card-title"><span>💬</span>注目コメント（感情軸）</div>
+          <div id="sentimentList"></div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-card-title"><span>✅</span>行動変容の宣言（具体的な誓い）</div>
+          <div id="actionList"></div>
+        </div>
+      </div>
+      <div class="section-head" style="margin-top:8px"><span class="section-tag">個人別</span><span class="section-title">スライド講座 感想 ＋ ドラレコ動画 コメント（個人別）</span></div>
+      <div class="person-comment-grid" id="personComments"></div>
+    </div>
+  </div>
+
+</main>
+</div>
+<script type="application/json" id="dash-data">{"segments": {"M05": {"meta": {"logo_tag": "JAF TRAINING 2026", "display_name": "1年目", "logo_sub": "1年目・15名", "topbar_sub": "1年目 15名 ／ 4講座", "collect_date": "2026-06-15", "company_rule_main": "週3回以上ログイン", "company_rule_sub": "月15回以上が目安ライン", "login_thresholds": {"green": 8, "amber": 4}, "login_pace": {"monthly": {"green": 15, "amber": 8}, "elapsed": 15, "days_in_month": 30}}, "doreco_videos": ["歩行者の無謀な横断", "カーブ途中の交差点", "高速道路合流時の交錯", "左折時のシニアカー巻き込み"], "doreco_total": 4, "doreco_has_unwatched": true, "slide_labels": ["雨の多い梅雨の時期", "事故を起こしたらどう", "駐車場から出るときも"], "test_subs": ["テスト５－１", "テスト５－２"], "people": [{"name": "深田未来", "store": "イオンモール鈴鹿店", "store_short": "鈴鹿店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [true, true, true, false], "doreco_viewed": 3, "doreco_total": 4, "login": {"count": 10, "last": "06/11"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "速度を抑えることやライトを点灯することが、苦手な雨天の運転の際に心の余裕につながると思いました。"}, {"topic": "事故を起こしたらどうする", "text": "まず人命の救護を一番に行うことが重要だと知っておくことが大切だと思いました。また二次被害を起こさないように、現場の対応を行うことも大切だと思いました。"}, {"topic": "駐車場から出るときも", "text": "車には死角というものが存在するため、それを踏まえたうえで出発前の進行方向の確認、イメージを行うようにしようと思いました。"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "歩行者は反対車線の歩道に渡りたかったが、近くに横断歩道が無かったため無理に渡ろうとしたのかもしれないと思いました。自車は様子が変わった歩行者を見かけた場合は、その動向に注意しておく必要があると思いました。"}, {"topic": "カーブ途中の交差点", "text": "カーブで反対車線を走る対向車が見えづらい状況だったために、自車の存在に気付くのが遅れて右折を開始してしまったと思います。自車は対向車が自分に気づかず右折してくるかもしれないと予測を立てておけば、事故の回避につながると思います。"}, {"topic": "高速道路合流時の交錯", "text": "合流地点のすぐ先にある出口から出たかったため、無理して割り込む形になっています。自車も合流するときに付近にいる車両の動きには注意しておく必要があると思いました。"}]}, {"name": "三田大夢", "store": "インターパーク宇都宮店", "store_short": "宇都宮店", "slides": [{"rikai": "NG", "jisshi": 0}, {"rikai": "NG", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 1, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [false, false, false, false], "doreco_viewed": 0, "doreco_total": 4, "login": {"count": 2, "last": "06/13"}, "doreco_badge": null, "slide_comments": [{"topic": "事故を起こしたらどうする", "text": "事故を起こしてしまった場合は、慌てず冷静に状況を把握して適切な対処をできるようにする。"}, {"topic": "駐車場から出るときも", "text": "周囲だけでなく、周りの障害物の確認もしっかりと目視で行う。"}], "doreco_comments": []}, {"name": "松本愛哉", "store": "伊丹店", "store_short": "伊丹店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [true, true, true, true], "doreco_viewed": 4, "doreco_total": 4, "login": {"count": 25, "last": "06/15"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨の日は晴れの日より歩行者や走行いている車に注意しながら運転することを意識する。"}, {"topic": "事故を起こしたらどうする", "text": "事故ってしまった場合は焦らず冷静に対処する必要があると思うので、正しい知識を身に着けてもしもの時の備えをする。"}, {"topic": "駐車場から出るときも", "text": "車の周囲だけでなく、進行方向に障害物がないかの確認もしておくとより安全に事故らず運転できると思うので意識する。"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "車が来ていないと思い、歩行者は飛び出してきたと思います。自車は歩行者が少しでも横断しようとしていれば減速し、すぐ停止できるスピードで走行すると危険を回避できると思います。"}, {"topic": "カーブ途中の交差点", "text": "対向車が来ていないかの確認が十分にできていなかったからだと思います。カーブは先の状況が見えにくいため、スピードを出していたらこのような危険な場面に遭遇してしまう可能性があるため、カーブの道を走行する際はスピードを落として走行すると危険を回避できると思います。"}, {"topic": "高速道路合流時の交錯", "text": "追い越し車線を走行していた車は合流してくる車を認識していなかったため、自車の前に割り込むような形になってしまったのではないかと思います。自車は合流する車線だけでなく追い越し車線を走行している車が車線変更してこないかウインカーなどを確認することができれば危険を回避できると思います。"}, {"topic": "左折時のシニアカー巻き込", "text": "巻き込み確認を怠ったからだと思います。しっかりと確認していればシニアカーの存在にも気づいて停止できたと思います。"}]}, {"name": "廣内将剛", "store": "市川店", "store_short": "市川店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [true, false, false, false], "doreco_viewed": 1, "doreco_total": 4, "login": {"count": 10, "last": "06/02"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨の日問わず、安全が確認できないところは、速度を落とす"}, {"topic": "事故を起こしたらどうする", "text": "先ずは安否確認"}, {"topic": "駐車場から出るときも", "text": "確認を怠らない"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "左右の確認"}]}, {"name": "児島翔太", "store": "寝屋川店", "store_short": "寝屋川店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 3}, "doreco": [true, true, true, false], "doreco_viewed": 3, "doreco_total": 4, "login": {"count": 6, "last": "06/08"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨の日は、視界と路面の状態が悪くなるため、車間距離を普段より空け、速度も抑えて走行する。"}, {"topic": "事故を起こしたらどうする", "text": "まず事故を起こさないように安全運転に努めるが、もし事故を起こしてしまった場合は、自分で責任を持って然るべき対応を取る。"}, {"topic": "駐車場から出るときも", "text": "駐車場から出る際は、横の車や出口のポール等を巻き込まないように注意して運転し、徐行で走行する。"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "走れば渡れると歩行者が考えているかもしれないため、歩行者が止まって左右確認をしている場合等の横断しそうな素振りがあれば、速度を落とし、飛び出してきた場合に備える。"}, {"topic": "カーブ途中の交差点", "text": "相手はカーブの手前に交差点があり、見通しが悪いが、対向車が来ていないと思って右折をしてしまったと考えられる。こういうとき、カーブに入る前からあらかじめ減速をしておく必要があると考える。"}, {"topic": "高速道路合流時の交錯", "text": "相手の車両は、合流の先にあった出口に入ろうとしていたから割り込んできたと考える。出口があるのが分かっているなら合流地点の前から左車線を走行すべきだと考える。自車は合流前に右車線の車両がウィンカーを点けていないか確認すべきだと考える。"}]}, {"name": "難波杏介", "store": "世田谷本店", "store_short": "世田谷本店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [false, false, false, false], "doreco_viewed": 0, "doreco_total": 4, "login": {"count": 6, "last": "06/14"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨の日はいつも以上に心に余裕を持つ必要があるため、早めの行動に努める。"}, {"topic": "事故を起こしたらどうする", "text": "事故が起きたら、まず警察と救急に電話する。"}, {"topic": "駐車場から出るときも", "text": "常に周囲に気を配り、障害物の早期発見に努める。"}], "doreco_comments": []}, {"name": "佐藤風馬", "store": "仙台店", "store_short": "仙台店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 2, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [true, true, true, true], "doreco_viewed": 4, "doreco_total": 4, "login": {"count": 18, "last": "06/14"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨の日の走行は普段よりも視界が悪かったり、ハンドル操作もしにくいので車間距離をとったりする。"}, {"topic": "事故を起こしたらどうする", "text": "万が一事故を起こした場合は、冷静な対応が必要になる。負傷者がいないか、後続車が来ないかなどを確認して対応する。"}, {"topic": "駐車場から出るときも", "text": "進行方向にどのような障害物があるのかを確認してから出発すると事故を起こす確率が少し減らせることができる。"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "反対車線へ横断したかったが、左右確認ができていなかった。歩行者の動きを予測しなければいけない。"}, {"topic": "カーブ途中の交差点", "text": "カーブの多い道路では見通しが悪いため、右左折の判断がしにくい箇所があります。対向車はいけると思って発信したと思います。"}, {"topic": "高速道路合流時の交錯", "text": "インターの出口しか見ていなくて、合流してくる車に気付いてなかった。"}, {"topic": "左折時のシニアカー巻き込", "text": "左折時にミラー、目視をしていなかったため、死角になっているシニアカーを見つけることができなかった。"}]}, {"name": "西川智裕", "store": "相模大野店", "store_short": "相模大野店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 2}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 2, "score": 100}, {"jisshi": 2, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 4}, "doreco": [true, true, true, true], "doreco_viewed": 4, "doreco_total": 4, "login": {"count": 8, "last": "06/12"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨天での運転もプライベートであれば避けることが出来るが、仕事なるとどんな天気であろうと運転しなければならない。その際晴れの日とは違う点をしっかり注意しなければならないということを意識して運転したい。"}, {"topic": "事故を起こしたらどうする", "text": "自転車や停車している車両を追い越すことは頻繁に起こることだと思うので、停車している車両の前（死角）に何があるか分からないことを念頭に置いて、注意しながら運転したい。"}, {"topic": "駐車場から出るときも", "text": "定位状態から動き出す際はより注意が必要だと再認識した。運転している最中だけでなく、停車する際や再出発する際も注意しながら運転したいと思う。"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "歩行者は目的地に向かうという意思が強かったため、周りの状況を十分に確認せずに横断を始めてしまったと考えられる。注意すべき点は、歩行者が車道側に体を向けている時点で飛び出してくるかもしれないといった予測だけでも、事故を防ぐことができるのではと思う。"}, {"topic": "カーブ途中の交差点", "text": "カーブの奥に信号があったため、お互いに対向車が見えなかったため、事故につながりそうになったと考えられる。対策としては、カーブ途中に先行信号機が見えたタイミングで、対向車の動きを予測してスピードを緩めるなどの対策がとれれば、危なくなることはないと考える。"}, {"topic": "高速道路合流時の交錯", "text": "出口がすぐ近くにあったため、高速を降りようとしたため事故が起きかけたと考えられる。今回の動画では割り込んだ側も過失があるとは思うが、合流前に周りを見回し危険を予測してスピードを緩めるなどの対策を取るといいのではと思う。"}, {"topic": "左折時のシニアカー巻き込", "text": "店舗に入りたい気持ちが大きく、ピラーなどで視界が塞がれたのもあり発見が遅れ、事故に繋がりそうになったのではと考えられる。しっかり歩道側を確認していれば、このようなことにはならなっかたと考えられる。"}]}, {"name": "忽那航太", "store": "草加店", "store_short": "草加店", "slides": [{"rikai": "NG", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 2, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [true, true, true, false], "doreco_viewed": 3, "doreco_total": 4, "login": {"count": 6, "last": "06/09"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨の日は、路面の状況が悪くい上に視界が悪いので、特に雨の日には側道を落とし、安全運転を心掛ける必要があると感じた。"}, {"topic": "事故を起こしたらどうする", "text": "もし事故を起こしてしまった後にも、冷静かつ迅速な対応をしなければいけないと感じた。"}, {"topic": "駐車場から出るときも", "text": "事前に障害が異物を確認することで、接触などの事故を防ぐことができると感じた"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "歩行者は車の存在に気づいていなかった。特に横断歩道が少ない場所や信号待ちが長い場所では、飛び出しが多いと感じる。事前に対策を講じることは難しいが頭の片隅において走行すべきだと感じる"}, {"topic": "カーブ途中の交差点", "text": "カーブは先の見透しが悪く、来ていることが見えていなかった。接触事故を無くすためにも、スピードには十分に気を付けたい。"}, {"topic": "高速道路合流時の交錯", "text": "追い越し車線を走行していた車は降り口が近いために車線変更を行ったが、合流車線の車に気づいていなかった。合流付近ではなるべく進路変更を行わず、高速道路では余裕を持った走行や車線変更を行うべきだと感じた。"}]}, {"name": "園田滉己", "store": "草加店", "store_short": "草加店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [false, false, false, false], "doreco_viewed": 0, "doreco_total": 4, "login": {"count": 10, "last": "06/15"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨の日は冷静に判断をして運転することが大切だと思いました"}, {"topic": "事故を起こしたらどうする", "text": "負傷者の救護をしっかり行うことが大切だと思いました"}, {"topic": "駐車場から出るときも", "text": "接触事故を防ぐことが大切だと思いました"}], "doreco_comments": []}, {"name": "葭矢淳", "store": "東大阪店", "store_short": "東大阪店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [true, true, false, false], "doreco_viewed": 2, "doreco_total": 4, "login": {"count": 11, "last": "06/10"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨の日はワイパーを使い視界を良好にし、速度も充分に落とし車間距離も多めにとり、歩行者に泥が跳ねないように運転します。"}, {"topic": "事故を起こしたらどうする", "text": "自分が運転していて事故を起こしてしまった時だけでなく同乗している時でも傷病者を安全な場所に移動させたり救急車、警察に連絡し、救護をします。"}, {"topic": "駐車場から出るときも", "text": "車に乗り込む前にしっかり周囲の状況、障害物を確認し、発車します。"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "歩行者は前を走る車で対向車が来てるか安全かも見えていないにも関わらず自分の渡りたいという気持ちで飛び出して来た愚か者である。\n自車が気を付けるべき点はもう少しスピードを落とし反対車線の歩道の様子も見ながら走行するべきだった。"}, {"topic": "カーブ途中の交差点", "text": "対向車がこのタイミングで右折を開始した理由は見通しが悪く対向車が来ることがみえなかったから。\nカーブの後に交差点があるので自社はスピードを落として走行するべき。"}]}, {"name": "小葉松将輝", "store": "柏店", "store_short": "柏店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [true, true, true, false], "doreco_viewed": 3, "doreco_total": 4, "login": {"count": 12, "last": "06/11"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨の日は制動距離が長くなり、視界も悪くなるため、晴れの日以上に気を引き締めて運転することが大事だと思った。"}, {"topic": "事故を起こしたらどうする", "text": "事故を起こしてしまった際や事故を発見した際は落ち着いて速やかに救急や警察に連絡をし、自分が当事者である場合は、そのあとに会社や保険会社に連絡できるようにする"}, {"topic": "駐車場から出るときも", "text": "周りの車だけではなく進行方向も確認しながら出発しようと思う。"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "歩行者は対向車線の車の動きだけ気にしていて、自車の動きを見ていないがためにこのような飛び出しをしたと考えられる。右側に様子がおかしい歩行者の方が見えたと思うので念のためスピードを落としたほうがよかったと思う。"}, {"topic": "カーブ途中の交差点", "text": "対向車がこのタイミングで右折をした理由としては、カーブの終わり際で自車が見えづらかったためだと考えられる。また、自車ができることとしてはカーブでスピードを出しすぎなので、もっとスピードを落としこのような危険を回避できるようにすべきだと思う。"}, {"topic": "高速道路合流時の交錯", "text": "追い越し車線を走行していた車は高速から降りるために、無理やり自社の前に割り込んできたと考えられる。またこの際に自車は右を走る車には気づいていたと思うので、ウィンカーを出していることに気づき減速をすべきだった。"}]}, {"name": "黒坂悠貴", "store": "八王子堀之内店", "store_short": "八王子堀之内店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "NG", "jisshi": 0}, {"rikai": "NG", "jisshi": 1}], "slide_ok": 1, "tests": [{"jisshi": 1, "score": null}, {"jisshi": 0, "score": null}], "gokaku_kai": 0, "all_pass": false, "touch": {"video": false, "doku": false, "seikai_kai": 0}, "doreco": [false, false, false, false], "doreco_viewed": 0, "doreco_total": 4, "login": {"count": 6, "last": "06/15"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨の日の運転は晴れの日よりも慎重にしたい。"}, {"topic": "駐車場から出るときも", "text": "周囲の確認をしっかりする。"}], "doreco_comments": []}, {"name": "鶴田京士朗", "store": "姫路店", "store_short": "姫路店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [true, true, true, false], "doreco_viewed": 3, "doreco_total": 4, "login": {"count": 8, "last": "06/14"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "そもそもの車両点検をしっかりと行い、確実にできる部分で事故の確率を下げる。"}, {"topic": "事故を起こしたらどうする", "text": "何よりも人命を最優先で、二次被害にも注意しつつ冷静に対処する。"}, {"topic": "駐車場から出るときも", "text": "サンキュー事故なども起きやすいので、譲られても自分のペースで安全確認などを怠らないようにする。"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "世の中バカが多いので、自分以外のすべての存在に細心の注意を払って、かもしれない運転をする。"}, {"topic": "カーブ途中の交差点", "text": "対向車も余裕をもって認識してもらうために、とくにブラインドコーナーなどでは自車のスピードを下げる。"}, {"topic": "高速道路合流時の交錯", "text": "割り込むことを考慮してもっと距離に余裕をもっておくべき。"}]}, {"name": "山田泰大", "store": "福岡店", "store_short": "福岡店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 1}, "doreco": [true, true, false, false], "doreco_viewed": 2, "doreco_total": 4, "login": {"count": 8, "last": "06/09"}, "doreco_badge": null, "slide_comments": [{"topic": "雨の多い梅雨の時期", "text": "雨天時の走行は制動距離が伸びたり視界が悪くなったりすることが\nあるので気をつけて走行したい"}, {"topic": "事故を起こしたらどうする", "text": "もし事故を起こしてしまった場合、速やかに被害者の安否を確認し早急に対応する。"}, {"topic": "駐車場から出るときも", "text": "進行方向には車に乗車したときにポールだったり見えないものもあったりするので乗車前に進行方向を確認する必要がある"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "歩行者は対向車がきていないと思い飛び出した。歩行者が出で来ることを予測し慎重に運転する"}, {"topic": "カーブ途中の交差点", "text": "速度を落し走行する"}]}], "kpis": [{"tone": "amber", "label": "スライド講座", "val": "80%", "sub": "12/15名 完了"}, {"tone": "amber", "label": "○×テスト", "val": "93%", "sub": "14/15名 合格"}, {"tone": "amber", "label": "タッチで危険予測", "val": "93%", "sub": "14/15名 完了"}, {"tone": "amber", "label": "ドラレコ動画", "val": "20%", "sub": "全4本完了：3名"}], "login_kpis": [{"tone": "green", "label": "達成ペース（8回以上）", "val": "10名", "sub": "松本愛哉(25)・佐藤風馬(18)・小葉松将輝(12)"}, {"tone": "amber", "label": "要注目（4〜7回）", "val": "4名", "sub": "ペースを維持できれば達成圏"}, {"tone": "red", "label": "要確認（3回以下）", "val": "1名", "sub": "三田大夢(2)"}, {"tone": "amber", "label": "平均ログイン回数", "val": "9.7", "sub": "月15回ペース・15/30日経過"}], "charts": {"courses": {"labels": ["スライド講座", "○×テスト", "タッチで危険予測", "ドラレコ動画"], "done": [12, 14, 14, 3], "undone": [3, 1, 1, 12]}, "dist": [3, 8, 4]}, "overview_alert": {"tone": "red", "icon": "📹", "title": "ドラレコ動画 全完了：3/15名（20%）", "body_html": "\u003cstrong style=\"color:var(--red)\">⚠ 未視聴（0本）：\u003c/strong>三田大夢・難波杏介・園田滉己・黒坂悠貴"}, "doreco_alert": {"tone": "red", "icon": "📹", "title": "ドラレコ動画 全完了：3/15名（20%）", "body_html": "\u003cstrong style=\"color:var(--red)\">⚠ 未視聴（0本）：\u003c/strong>三田大夢・難波杏介・園田滉己・黒坂悠貴"}, "analysis": {"insight_bullets": ["ドラレコ視聴完了（4/4）は\u003cstrong>松本・佐藤・西川\u003c/strong>の3名。一方で\u003cstrong>三田・難波・園田・黒坂\u003c/strong>の4名が未視聴（0/4）で、視聴状況が二極化しており未視聴者への個別フォローが必要。", "スライド感想は「\u003cstrong>確認\u003c/strong>」「\u003cstrong>速度を落とす\u003c/strong>」「\u003cstrong>雨天・視界\u003c/strong>」が最頻出で、梅雨期の安全運転の要点はおおむね浸透している。", "\u003cstrong>西川智裕・深田未来\u003c/strong>は各ドラレコで相手の心理と自車の予測対応まで踏み込んだ質の高い考察を記述。", "事故対応では人命救護・二次被害防止に加え、\u003cstrong>小葉松将輝\u003c/strong>が会社・保険会社への連絡まで言及し責任意識が高い。", "\u003cstrong>黒坂悠貴\u003c/strong>は○×テスト未合格かつドラレコ未視聴（0/4）。学習進捗に遅れがあり優先的なフォロー対象。", "\u003cstrong>表現面の注意\u003c/strong>：\u003cstrong>葭矢淳\u003c/strong>（歩行者を「愚か者」）・\u003cstrong>鶴田京士朗\u003c/strong>（「世の中バカが多い」）に歩行者を見下す言い回しあり。運転の結論は安全側を向いているため、軽い口頭フィードバックで表現の整え方を促したい。"], "kw": [{"word": "確認（目視・左右・周囲）", "count": 13, "max": 15}, {"word": "速度を落とす・スピード", "count": 12, "max": 15}, {"word": "雨天・視界・路面", "count": 13, "max": 15}, {"word": "救護・人命・冷静対応", "count": 10, "max": 15}, {"word": "死角・障害物・進行方向", "count": 9, "max": 15}, {"word": "予測・かもしれない運転", "count": 8, "max": 15}, {"word": "車間距離", "count": 5, "max": 15}, {"word": "巻き込み・ミラー", "count": 5, "max": 15}], "themes": [{"label": "確認・安全行動", "count": 13, "cls": "t2"}, {"label": "速度管理", "count": 12, "cls": "t3"}, {"label": "雨天・路面状況判断", "count": 13, "cls": "t2"}, {"label": "事故時対応・救護", "count": 10, "cls": "t2"}, {"label": "危険予測（かもしれない運転）", "count": 8, "cls": "t2"}, {"label": "死角・出発前確認", "count": 9, "cls": "t2"}, {"label": "巻き込み注意", "count": 5, "cls": "t3"}, {"label": "責任・会社意識", "count": 3, "cls": "t1"}, {"label": "表現・態度面の配慮", "count": 2, "cls": "t4"}], "sentiments": [{"cls": "awareness", "name": "西川智裕（深い考察）", "quote": "停車車両の死角に何があるか分からない前提で運転し、停車・再出発時もより注意が必要だと再認識。"}, {"cls": "awareness", "name": "深田未来（予測志向）", "quote": "各ドラレコで相手の動機を推測し、自車側が予測を立てておけば回避できると具体的に分析。"}, {"cls": "positive", "name": "小葉松将輝（責任意識）", "quote": "事故時は救急・警察に連絡し、当事者なら会社・保険会社への連絡まで行うと明記。"}, {"cls": "concern", "name": "未視聴4名（要フォロー）", "quote": "三田・難波・園田・黒坂はドラレコ0/4。視聴の促しと進捗フォローが必要。"}, {"cls": "concern", "name": "葭矢淳・鶴田京士朗（表現要配慮）", "quote": "歩行者を「愚か者」「バカ」と表現。結論は減速・かもしれない運転で適切だが、見下す言い回しは安全教育上は要配慮。"}], "actions": [{"name": "児島翔太", "action": "駐車場退出時は巻き込みに注意し、徐行で走行する。"}, {"name": "西川智裕", "action": "停車車両の死角を念頭に置き、再出発時も注意して運転する。"}, {"name": "松本愛哉", "action": "雨の日は歩行者や他車により注意して運転する。"}, {"name": "佐藤風馬", "action": "出発前に進行方向の障害物を確認してから発車する。"}, {"name": "忽那航太", "action": "雨の日は速度を落とし安全運転を心掛ける。"}, {"name": "小葉松将輝", "action": "事故時は救急・警察、その後に会社・保険会社へ連絡する。"}, {"name": "鶴田京士朗", "action": "譲られても自分のペースで安全確認を怠らない。"}, {"name": "山田泰大", "action": "乗車前に進行方向（ポール等の見えにくい物）を確認する。"}]}}, "M17": {"meta": {"logo_tag": "JAF TRAINING 2026", "display_name": "継続", "logo_sub": "継続・4名", "topbar_sub": "継続 4名 ／ 4講座", "collect_date": "2026-06-15", "company_rule_main": "週3回以上ログイン", "company_rule_sub": "月15回以上が目安ライン", "login_thresholds": {"green": 8, "amber": 4}, "login_pace": {"monthly": {"green": 15, "amber": 8}, "elapsed": 15, "days_in_month": 30}}, "doreco_videos": ["歩行者の無謀な横断", "カーブ途中の交差点", "高速道路合流時の交錯", "左折時のシニアカー巻き込み"], "doreco_total": 4, "doreco_has_unwatched": true, "slide_labels": ["車線変更のルールを再", "濃霧のとき", "目視での確認が事故を"], "test_subs": ["テスト１７－１", "テスト１７－２"], "people": [{"name": "金田憂弥", "store": "ラパークいわき店", "store_short": "いわき店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 2}, "doreco": [true, true, true, true], "doreco_viewed": 4, "doreco_total": 4, "login": {"count": 14, "last": "06/14"}, "doreco_badge": null, "slide_comments": [{"topic": "車線変更のルールを再確認", "text": "車線変更じには違反など注意します"}, {"topic": "濃霧のとき", "text": "視界の悪い運転時には尚気を付けます"}, {"topic": "目視での確認が事故を防ぐ", "text": "車線変更時には急な動きはせず目視確認も行います"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "歩行者の動きに注意します"}, {"topic": "カーブ途中の交差点", "text": "カーブなどは減速します"}, {"topic": "高速道路合流時の交錯", "text": "車線合流の際にはほかの車両の動きに注意します"}, {"topic": "左折時のシニアカー巻き込", "text": "左折時の巻き込みに注意します"}]}, {"name": "赤沼政文", "store": "札幌店", "store_short": "札幌店", "slides": [{"rikai": "NG", "jisshi": 0}, {"rikai": "NG", "jisshi": 0}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 1, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 2, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 3}, "doreco": [true, true, true, true], "doreco_viewed": 4, "doreco_total": 4, "login": {"count": 10, "last": "06/13"}, "doreco_badge": null, "slide_comments": [{"topic": "目視での確認が事故を防ぐ", "text": "車線変更や合流時等、視覚が生じると事故につながる場面は多々あるのでしっかりとミラーの確認、目視での確認を行うようにします。"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "向かい側に友達がいてかけよった"}, {"topic": "カーブ途中の交差点", "text": "カーブで対向車が見えずに右折をしようとした。"}, {"topic": "高速道路合流時の交錯", "text": "少しスピードを緩めて前方車両とタイミングをずらす。"}, {"topic": "左折時のシニアカー巻き込", "text": "見えていなかったのでそのまま走行した。"}]}, {"name": "馬場樹悠", "store": "盛岡店", "store_short": "盛岡店", "slides": [{"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}, {"rikai": "OK", "jisshi": 1}], "slide_ok": 3, "tests": [{"jisshi": 1, "score": 100}, {"jisshi": 1, "score": 100}], "gokaku_kai": 1, "all_pass": true, "touch": {"video": true, "doku": true, "seikai_kai": 4}, "doreco": [true, true, true, true], "doreco_viewed": 4, "doreco_total": 4, "login": {"count": 11, "last": "06/15"}, "doreco_badge": null, "slide_comments": [{"topic": "車線変更のルールを再確認", "text": "車線変更をする際は、ミラーだけではんく目視での確認もする。"}, {"topic": "濃霧のとき", "text": "濃霧など視界が悪い際はスピードを抑え、慎重に走行する。"}, {"topic": "目視での確認が事故を防ぐ", "text": "ミラーだけではなく目視での確認を徹底する。"}], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "歩行者は車のスピードを見誤ってしまった。歩行者がいた際は、急に飛び出してくることも想定して走行する。"}, {"topic": "カーブ途中の交差点", "text": "見通しが悪い交差点のため、対向車も右折できると思ってしまった。見通しの悪い場所の際はスピードを抑える。"}, {"topic": "高速道路合流時の交錯", "text": "高速を降りるために、車線変更をした。無理に合流せずに減速する。"}, {"topic": "左折時のシニアカー巻き込", "text": "ミラーの死角に入ってしまったから。ミラーだけではなく、目視でも確認する。"}]}, {"name": "髙田渚", "store": "大宰府店", "store_short": "大宰府店", "slides": [{"rikai": "NG", "jisshi": 0}, {"rikai": "NG", "jisshi": 0}, {"rikai": "NG", "jisshi": 0}], "slide_ok": 0, "tests": [{"jisshi": 0, "score": null}, {"jisshi": 0, "score": null}], "gokaku_kai": 0, "all_pass": false, "touch": {"video": false, "doku": false, "seikai_kai": 0}, "doreco": [true, true, true, false], "doreco_viewed": 3, "doreco_total": 4, "login": {"count": 29, "last": "06/14"}, "doreco_badge": null, "slide_comments": [], "doreco_comments": [{"topic": "歩行者の無謀な横断", "text": "【交通安全の趣旨に反する記述のため非表示。個別コーチング対象】"}, {"topic": "カーブ途中の交差点", "text": "対向車は上り坂で交差点までブラインドになっており、自車の存在に気がついいない。\n自車はどんな交差点に入る際も減速ないしはアクセルを緩めていはいる。"}, {"topic": "高速道路合流時の交錯", "text": "合流前に走行車線と追い越し車線の車の動きの確認も行う。"}]}], "kpis": [{"tone": "amber", "label": "スライド講座", "val": "50%", "sub": "2/4名 完了"}, {"tone": "amber", "label": "○×テスト", "val": "75%", "sub": "3/4名 合格"}, {"tone": "amber", "label": "タッチで危険予測", "val": "75%", "sub": "3/4名 完了"}, {"tone": "amber", "label": "ドラレコ動画", "val": "75%", "sub": "全4本完了：3名"}], "login_kpis": [{"tone": "green", "label": "達成ペース（8回以上）", "val": "4名", "sub": "髙田渚(29)・金田憂弥(14)・馬場樹悠(11)"}, {"tone": "amber", "label": "要注目（4〜7回）", "val": "0名", "sub": "ペースを維持できれば達成圏"}, {"tone": "red", "label": "要確認（3回以下）", "val": "0名", "sub": "―"}, {"tone": "amber", "label": "平均ログイン回数", "val": "16.0", "sub": "月15回ペース・15/30日経過"}], "charts": {"courses": {"labels": ["スライド講座", "○×テスト", "タッチで危険予測", "ドラレコ動画"], "done": [2, 3, 3, 3], "undone": [2, 1, 1, 1]}, "dist": [3, 1, 0]}, "overview_alert": {"tone": "amber", "icon": "⚠", "title": "個別フォローが必要な受講者あり", "body_html": "\u003cstrong>髙田渚\u003c/strong>：ドラレコ所感に交通安全の趣旨に反する記述があり、○×テスト一部未合格・スライド感想未記入も重なります。面談ベースの個別コーチングを推奨します。"}, "doreco_alert": {"tone": "green", "icon": "📹", "title": "ドラレコ動画 全完了：3/4名（75%）", "body_html": ""}, "analysis": {"insight_bullets": ["4名中3名（\u003cstrong>金田・赤沼・馬場\u003c/strong>）がドラレコ4/4を完了。継続者は視聴完了率が高い。", "感想は「\u003cstrong>目視確認\u003c/strong>」「\u003cstrong>車線変更・合流\u003c/strong>」「\u003cstrong>減速\u003c/strong>」が中心で、死角への意識が共通して高い。", "\u003cstrong>馬場樹悠\u003c/strong>はミラーの死角→目視徹底という原因と対策を明確に言語化。", "\u003cstrong>髙田渚\u003c/strong>はドラレコ所感に\u003cstrong>交通安全の趣旨に反する不適切な記述\u003c/strong>があり、○×テスト一部未合格・スライド感想未記入も重なる。\u003cstrong>個別コーチングによるフォローが必要\u003c/strong>。"], "kw": [{"word": "目視確認・ミラー", "count": 3, "max": 4}, {"word": "車線変更・合流", "count": 3, "max": 4}, {"word": "減速・スピード", "count": 3, "max": 4}, {"word": "視界・濃霧", "count": 2, "max": 4}, {"word": "巻き込み", "count": 2, "max": 4}, {"word": "歩行者予測", "count": 2, "max": 4}], "themes": [{"label": "確認・安全行動", "count": 3, "cls": "t2"}, {"label": "車線変更・合流注意", "count": 3, "cls": "t3"}, {"label": "速度・減速", "count": 3, "cls": "t3"}, {"label": "視界不良時の慎重運転", "count": 2, "cls": "t2"}, {"label": "巻き込み注意", "count": 2, "cls": "t3"}, {"label": "自己課題・要フォロー", "count": 1, "cls": "t4"}], "sentiments": [{"cls": "awareness", "name": "馬場樹悠（原因→対策）", "quote": "ミラーの死角に入っていたことを原因と捉え、目視確認の徹底を明言。"}, {"cls": "positive", "name": "赤沼政文（死角意識）", "quote": "車線変更・合流時の死角リスクを認識し、ミラーと目視での確認を徹底するとした。"}, {"cls": "concern", "name": "髙田渚（要個別指導）", "quote": "ドラレコ所感に交通安全の趣旨に反する危険・攻撃的な記述。テスト一部未合格・感想未記入も重なり、個別フォローが必要。"}], "actions": [{"name": "金田憂弥", "action": "車線変更時は急な動きをせず、目視確認も行う。"}, {"name": "赤沼政文", "action": "車線変更・合流時はミラーと目視の両方で確認する。"}, {"name": "馬場樹悠", "action": "ミラーだけでなく目視での確認を徹底する。"}]}}}, "order": ["M05", "M17"], "default": "M05"}</script>
+<script>
+const ALL = JSON.parse(document.getElementById('dash-data').textContent);
+/* ══════════ JAF OJT ダッシュボード 描画ロジック（複数セグメント・タブ切替） ══════════ */
+const CC={green:'#4a8c32',greenPale:'#d4e8cc',amber:'#c97a00',red:'#d94a3a',yellow:'#e6b800',text:'rgba(90,122,74,.7)',grid:'rgba(74,140,50,.1)'};
+
+let DATA = null;                 // 現在表示中セグメント
+let CURRENT_PANEL = 'overview';  // 現在のパネル（セグメント切替後も維持）
+let charts = [];                 // 生成済みChartインスタンス（切替時に破棄）
+
+const loginThr=(c)=>c>=DATA.meta.login_thresholds.green?'green':c>=DATA.meta.login_thresholds.amber?'amber':'red';
+const loginColor=(c)=>c>=DATA.meta.login_thresholds.green?CC.green:c>=DATA.meta.login_thresholds.amber?CC.amber:CC.red;
+const $=(id)=>document.getElementById(id);
+
+/* ── NAV（パネル切替） ── */
+const TITLES={overview:'全体進捗',login:'ログイン状況',doreco:'ドラレコ動画',detail:'個人詳細',comments:'感想・コメント'};
+function showPanel(id,el){
+  CURRENT_PANEL=id;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('panel-'+id).classList.add('active');
+  if(el){el.classList.add('active');}
+  else{const ni=document.querySelector('.nav-item[data-panel="'+id+'"]');if(ni)ni.classList.add('active');}
+  $('topbar-title').textContent=TITLES[id];
+}
+window.showPanel=showPanel;
+['overview','login','doreco','detail','comments'].forEach((id,i)=>{
+  const items=document.querySelectorAll('.nav-item');
+  if(items[i])items[i].setAttribute('data-panel',id);
+});
+
+/* ── セグメントタブ ── */
+function buildTabs(){
+  $('segTabs').innerHTML=ALL.order.map(k=>{
+    const s=ALL.segments[k];
+    return '<div class="seg-tab" data-seg="'+k+'" onclick="switchSegment(\''+k+'\')">'+s.meta.display_name+'<span class="seg-tab-count">'+s.people.length+'名</span></div>';
+  }).join('');
+}
+function switchSegment(key){
+  if(!ALL.segments[key])return;
+  document.querySelectorAll('.seg-tab').forEach(t=>t.classList.toggle('active',t.getAttribute('data-seg')===key));
+  renderSegment(key);
+}
+window.switchSegment=switchSegment;
+
+/* ── アラートバナーHTML ── */
+function alertHTML(a){
+  if(!a)return '';
+  const tone={green:{bg:'#edf5e8',bd:'rgba(74,140,50,.3)',bl:'var(--green)',tc:'var(--green-dark)'},
+              amber:{bg:'var(--amber-pale)',bd:'rgba(201,122,0,.3)',bl:'var(--amber)',tc:'var(--amber)'},
+              red:{bg:'var(--red-pale)',bd:'rgba(217,74,58,.35)',bl:'var(--red)',tc:'var(--red)'}}[a.tone||'green'];
+  return '<div class="alert-banner" style="background:'+tone.bg+';border-color:'+tone.bd+';border-left-color:'+tone.bl+'">'+
+    '<div class="alert-banner-icon">'+(a.icon||'📢')+'</div>'+
+    '<div><div class="alert-banner-title" style="color:'+tone.tc+'">'+a.title+'</div>'+
+    '<div class="alert-banner-body" style="color:var(--text2)">'+(a.body_html||'')+'</div></div></div>';
+}
+
+/* ── セグメント全描画 ── */
+function renderSegment(key){
+  DATA=ALL.segments[key];
+  const M=DATA.meta, P=DATA.people, A=DATA.analysis||{}, N=P.length;
+  charts.forEach(c=>{try{c.destroy();}catch(e){}});charts=[];
+
+  $('logoTag').textContent=M.logo_tag||'JAF TRAINING';
+  $('logoSub').textContent=M.logo_sub;
+  $('collectDate').textContent=M.collect_date;
+  $('topbarSub').textContent=M.topbar_sub;
+  $('ruleMain').textContent=M.company_rule_main;
+  $('ruleSub').textContent=M.company_rule_sub;
+  $('distTitle').textContent='ドラレコ 視聴本数 分布（'+N+'名）';
+  $('dorecoBarTitle').textContent='ドラレコ動画 個人別視聴状況（'+DATA.doreco_total+'本中）';
+  const navBadge=$('dorecoNavBadge');if(navBadge)navBadge.style.display=DATA.doreco_has_unwatched?'':'none';
+
+  $('overviewAlert').innerHTML=alertHTML(DATA.overview_alert);
+  $('dorecoAlert').innerHTML=alertHTML(DATA.doreco_alert);
+
+  $('kpiGrid').innerHTML=(DATA.kpis||[]).map(k=>'<div class="kpi '+k.tone+'"><div class="kpi-label">'+k.label+'</div><div class="kpi-val">'+k.val+'</div><div class="kpi-sub">'+k.sub+'</div></div>').join('');
+  $('loginKpiGrid').innerHTML=(DATA.login_kpis||[]).map(k=>'<div class="kpi '+k.tone+'"><div class="kpi-label">'+k.label+'</div><div class="kpi-val">'+k.val+'</div><div class="kpi-sub">'+k.sub+'</div></div>').join('');
+
+  charts.push(new Chart($('chartCourses'),{type:'bar',data:{labels:DATA.charts.courses.labels,datasets:[{label:'完了',data:DATA.charts.courses.done,backgroundColor:CC.green,borderRadius:5},{label:'未完了',data:DATA.charts.courses.undone,backgroundColor:CC.red,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{color:CC.text,font:{size:11}},grid:{color:CC.grid}},y:{stacked:true,max:N,ticks:{color:CC.text,stepSize:Math.max(1,Math.round(N/7))},grid:{color:CC.grid}}}}}));
+  charts.push(new Chart($('chartDist'),{type:'doughnut',data:{labels:['全完了','部分視聴','未視聴'],datasets:[{data:DATA.charts.dist,backgroundColor:[CC.green,CC.amber,CC.red],borderWidth:2,borderColor:'#fff',hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.raw+'名'}}}}}));
+  const dS=P.slice().sort((a,b)=>b.doreco_viewed-a.doreco_viewed);
+  charts.push(new Chart($('chartDorecoBar'),{type:'bar',data:{labels:dS.map(p=>p.store_short+'　'+p.name),datasets:[{label:'視聴済み',data:dS.map(p=>p.doreco_viewed),backgroundColor:dS.map(p=>p.doreco_viewed===DATA.doreco_total?CC.green:p.doreco_viewed===0?CC.red:CC.amber),borderRadius:4},{label:'未視聴',data:dS.map(p=>DATA.doreco_total-p.doreco_viewed),backgroundColor:CC.greenPale,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,max:DATA.doreco_total,ticks:{color:CC.text,stepSize:1},grid:{color:CC.grid}},y:{stacked:true,ticks:{color:CC.text,font:{size:11},autoSkip:false}}}}}));
+  const lS=P.slice().sort((a,b)=>b.login.count-a.login.count);
+  charts.push(new Chart($('chartLogin'),{type:'bar',data:{labels:lS.map(p=>p.store_short+'　'+p.name),datasets:[{label:'ログイン回数',data:lS.map(p=>p.login.count),backgroundColor:lS.map(p=>loginColor(p.login.count)),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const p=lS[ctx.dataIndex];return ctx.raw+'回 / 最終ログイン '+p.login.last;}}}},scales:{x:{ticks:{color:CC.text},grid:{color:CC.grid}},y:{ticks:{color:CC.text,font:{size:11}}}}}}));
+
+  const maxLogin=Math.max(20,...P.map(p=>p.login.count));
+  const gT=M.login_thresholds.green, aT=M.login_thresholds.amber;
+  $('loginLegend').innerHTML=
+    '<div class="legend-item"><span class="legend-dot" style="background:'+CC.green+'"></span>達成（'+gT+'回以上）</div>'+
+    '<div class="legend-item"><span class="legend-dot" style="background:'+CC.amber+'"></span>要注目（'+aT+'〜'+(gT-1)+'回）</div>'+
+    '<div class="legend-item"><span class="legend-dot" style="background:'+CC.red+'"></span>要確認（'+(aT-1)+'回以下）</div>';
+  const pn=$('loginPaceNote');
+  if(pn){pn.innerHTML = M.login_pace
+    ? '※ 月'+M.login_pace.monthly.green+'回ペースを集計日時点で按分（'+M.login_pace.elapsed+'/'+M.login_pace.days_in_month+'日経過）→ 達成ライン '+gT+'回・要確認 '+aT+'回未満'
+    : '※ 月間目安：達成 '+gT+'回以上・要確認 '+aT+'回未満';}
+  $('loginTableBody').innerHTML=P.slice().sort((a,b)=>b.login.count-a.login.count).map(p=>{
+    const c=p.login.count,cls=loginThr(c),label=cls==='green'?'達成':cls==='amber'?'要注目':'要確認',color=loginColor(c);
+    return '<tr><td style="font-weight:600">'+p.name+'</td><td style="color:var(--text2);font-size:12px">'+p.store+'</td><td><div class="count-bar-wrap"><div class="count-bar" style="width:'+Math.round(c/maxLogin*130)+'px;background:'+color+'"></div><span class="count-num" style="color:'+color+'">'+c+'</span></div></td><td style="font-family:var(--mono);font-size:12px;color:var(--text2)">'+p.login.last+'</td><td><span class="status-badge '+cls+'">'+label+'</span></td></tr>';
+  }).join('');
+
+  $('dorecoCards').innerHTML=P.map(p=>{
+    const cnt=p.doreco_viewed,cls=cnt===DATA.doreco_total?'all-ok':cnt===0?'danger':'warn',pc=cnt===DATA.doreco_total?'green':cnt===0?'red':'amber';
+    const badge=p.doreco_badge==='improved'?'<span style="font-size:13px;background:#fff3b0;border:1px solid #e6b800;border-radius:4px;padding:2px 8px;color:#b58c00;font-weight:600;margin-left:6px">🏆 今回完了！</span>':p.doreco_badge==='partial'?'<span style="font-size:13px;background:#edf5e8;border:1px solid #c7e6b4;border-radius:4px;padding:2px 8px;color:#2d7a1f;font-weight:600;margin-left:6px">📈 改善中</span>':p.doreco_badge==='new'?'<span style="font-size:13px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:4px;padding:2px 8px;color:#4338ca;font-weight:600;margin-left:6px">🆕 新規</span>':'';
+    return '<div class="pcard '+cls+'"><div class="pcard-name" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">'+p.name+badge+'</div><div class="pcard-store">'+p.store+'</div>'+DATA.doreco_videos.map((v,i)=>'<div class="video-row"><span class="video-label">'+v+'</span><span class="'+(p.doreco[i]?'check-done':'check-none')+'">'+(p.doreco[i]?'✓ 済':'― 未')+'</span></div>').join('')+'<span class="login-pill '+pc+'" style="margin-top:10px">'+cnt+' / '+DATA.doreco_total+'本完了</span></div>';
+  }).join('');
+
+  $('personCards').innerHTML=P.map(p=>{
+    const slide=p.slide_ok,sn=p.slides.length,doreco=p.doreco_viewed,dt=DATA.doreco_total;
+    const cls=slide===sn&&doreco===dt?'all-ok':doreco===0?'danger':'warn';
+    const c=p.login.count,lc=loginThr(c),ll=lc==='green'?'達成':lc==='amber'?'要注目':'要確認';
+    const dc=doreco===dt?'var(--green)':doreco===0?'var(--red)':'var(--amber)';
+    const tdone=p.touch&&p.touch.video&&p.touch.doku;
+    return '<div class="pcard '+cls+'"><div class="pcard-name">'+p.name+'</div><div class="pcard-store">'+p.store+'</div>'+
+      '<div class="prog-row"><span class="prog-label">スライド</span><div class="prog-track"><div class="prog-fill" style="width:'+Math.round(slide/sn*100)+'%;background:var(--green)"></div></div><span class="prog-val">'+slide+'/'+sn+'</span></div>'+
+      '<div class="prog-row"><span class="prog-label">○×テスト</span><div class="prog-track"><div class="prog-fill" style="width:'+(p.all_pass?100:50)+'%;background:'+(p.all_pass?'var(--green)':'var(--amber)')+'"></div></div><span class="prog-val" style="color:'+(p.all_pass?'var(--green)':'var(--amber)')+';font-size:9px">'+(p.all_pass?'合格':'未')+'</span></div>'+
+      '<div class="prog-row"><span class="prog-label">タッチ</span><div class="prog-track"><div class="prog-fill" style="width:'+(tdone?100:50)+'%;background:'+(tdone?'var(--green)':'var(--amber)')+'"></div></div><span class="prog-val" style="color:'+(tdone?'var(--green)':'var(--amber)')+';font-size:9px">'+(tdone?'済':'未')+'</span></div>'+
+      '<div class="prog-row"><span class="prog-label">ドラレコ</span><div class="prog-track"><div class="prog-fill" style="width:'+Math.round(doreco/dt*100)+'%;background:'+dc+'"></div></div><span class="prog-val">'+doreco+'/'+dt+'</span></div>'+
+      '<span class="login-pill '+lc+'">ログイン '+c+'回 '+ll+'</span></div>';
+  }).join('');
+
+  const slideLabels=DATA.slide_labels;
+  $('slideDetailTitle').textContent='スライド講座 実施詳細（'+slideLabels.length+'教材）';
+  $('slideDetailHead').innerHTML='<tr><th>氏名</th><th>店舗</th>'+slideLabels.map((l,i)=>'<th>'+(['①','②','③','④','⑤','⑥'][i]||'')+l+'<br><span style="font-weight:400;font-size:11px;opacity:.8">理解度 / 実施回数</span></th>').join('')+'<th>理解できた教材<br><span style="font-weight:400;font-size:11px;opacity:.8">'+slideLabels.length+'教材中</span></th></tr>';
+  $('slideDetailBody').innerHTML=P.map(p=>{
+    const okCount=p.slide_ok,total=p.slides.length;
+    const cells=p.slides.map(x=>{const ng=x.rikai==='NG';const color=ng?CC.amber:CC.green;return '<td style="text-align:center"><span style="font-weight:600;color:'+color+'">'+(ng?'ＮＧ':'ＯＫ')+'</span> <span style="color:var(--text3);font-size:12px">/ '+x.jisshi+'回</span></td>';}).join('');
+    return '<tr><td style="font-weight:600">'+p.name+'</td><td style="color:var(--text2);font-size:13px">'+p.store+'</td>'+cells+'<td style="text-align:center;font-weight:600;color:'+(okCount===total?CC.green:CC.amber)+'">'+okCount+'/'+total+' 教材</td></tr>';
+  }).join('');
+
+  const subs=DATA.test_subs;
+  $('testDetailTitle').textContent='○×テスト 実施詳細';
+  $('testDetailHead').innerHTML='<tr><th>氏名</th><th>店舗</th>'+subs.map(s=>'<th>'+s+' 実施回数</th><th>'+s+' 得点</th>').join('')+'<th>合格したのは何回目</th><th>合否</th></tr>';
+  $('testDetailBody').innerHTML=P.map(p=>{
+    const cells=p.tests.map(t=>{const warn=t.jisshi>1;return '<td style="text-align:center"><span style="color:'+(warn?CC.amber:CC.green)+';font-weight:600">'+t.jisshi+'回</span></td><td style="text-align:center"><span style="color:'+CC.green+';font-weight:600">'+(t.score==null?'―':t.score+'点')+'</span></td>';}).join('');
+    const g=p.gokaku_kai>1?'<span style="color:'+CC.amber+';font-weight:600">'+p.gokaku_kai+'回目</span>':p.all_pass?'<span style="color:'+CC.green+';font-weight:600">1回目</span>':'<span style="color:var(--text3)">―</span>';
+    const badge=p.all_pass?'<span class="status-badge green">合格</span>':'<span class="status-badge red">未</span>';
+    return '<tr><td style="font-weight:600">'+p.name+'</td><td style="color:var(--text2);font-size:13px">'+p.store+'</td>'+cells+'<td style="text-align:center">'+g+'</td><td style="text-align:center">'+badge+'</td></tr>';
+  }).join('');
+
+  $('touchDetailTitle').textContent='タッチで危険予測 実施詳細';
+  $('touchDetailBody').innerHTML=P.map(p=>{
+    const t=p.touch||{},kai=t.seikai_kai||0;const kaiColor=kai<=2?CC.green:kai<=4?CC.amber:CC.red;
+    const ck=(b)=>b?'<span style="color:'+CC.green+';font-weight:600">✓ 済</span>':'<span style="color:var(--text3)">― 未</span>';
+    return '<tr><td style="font-weight:600">'+p.name+'</td><td style="color:var(--text2);font-size:13px">'+p.store+'</td><td style="text-align:center">'+ck(t.video)+'</td><td style="text-align:center">'+ck(t.doku)+'</td><td style="text-align:center"><span style="color:'+kaiColor+';font-weight:600">'+(kai>0?kai+'回目':'―')+'</span></td></tr>';
+  }).join('');
+
+  $('insightList').innerHTML=(A.insight_bullets||[]).map(b=>'<li>'+b+'</li>').join('');
+  $('kwBars').innerHTML=(A.kw||[]).map(d=>{const pct=Math.round(d.count/d.max*100);return '<div class="kw-row"><span class="kw-word">'+d.word+'</span><div class="kw-track"><div class="kw-fill" style="width:'+pct+'%;background:'+(d.count>=d.max*0.7?CC.green:d.count>=d.max*0.5?CC.amber:CC.red)+'"></div></div><span class="kw-count">'+d.count+'</span></div>';}).join('');
+  $('themePills').innerHTML=(A.themes||[]).map(d=>'<span class="theme-pill '+d.cls+'">'+d.label+'<span class="theme-pill-count">'+d.count+'</span></span>').join('');
+  if((A.themes||[]).length){charts.push(new Chart($('chartTheme'),{type:'bar',data:{labels:A.themes.map(t=>t.label),datasets:[{data:A.themes.map(t=>t.count),backgroundColor:A.themes.map(t=>t.cls==='t1'?CC.green:t.cls==='t2'?CC.yellow:t.cls==='t3'?CC.amber:CC.red),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:CC.text,stepSize:2},grid:{color:CC.grid}},y:{ticks:{color:CC.text,font:{size:11}}}}}}));}
+  $('sentimentList').innerHTML=(A.sentiments||[]).map(d=>'<div class="sentiment-row"><span class="sent-dot '+d.cls+'"></span><div><div class="sent-name">'+d.name+'</div><div class="sent-quote">'+d.quote+'</div></div></div>').join('');
+  $('actionList').innerHTML=(A.actions||[]).map(d=>'<div class="sentiment-row"><span class="sent-dot positive"></span><div><div class="sent-name">'+d.name+'</div><div class="sent-quote">'+d.action+'</div></div></div>').join('');
+
+  $('personComments').innerHTML=P.map(p=>{
+    if((!p.slide_comments||!p.slide_comments.length)&&(!p.doreco_comments||!p.doreco_comments.length))return '';
+    let html='<div class="pc-card"><div class="pc-card-header"><div class="pc-avatar">'+p.name.slice(0,1)+'</div><div><div class="pc-name">'+p.name+'</div><div class="pc-store">'+p.store+'</div></div></div><div class="pc-body">';
+    (p.slide_comments||[]).forEach(c=>{html+='<div class="pc-entry"><span class="pc-entry-tag">📖 スライド｜'+c.topic+'</span><div class="pc-entry-text">'+c.text+'</div></div>';});
+    if((p.doreco_comments||[]).length){(p.doreco_comments).forEach(c=>{html+='<div class="pc-entry"><span class="pc-entry-tag doreco">📹 ドラレコ｜'+c.topic+'</span><div class="pc-entry-text">'+c.text+'</div></div>';});}
+    else{html+='<div class="pc-entry"><span class="pc-entry-tag doreco" style="opacity:.5">📹 ドラレコ</span><div class="pc-entry-text" style="color:var(--text3);font-style:italic">未視聴のためコメントなし</div></div>';}
+    html+='</div></div>';return html;
+  }).join('');
+
+  showPanel(CURRENT_PANEL,null);
+}
+
+/* ── 初期化 ── */
+buildTabs();
+const first=ALL.default||ALL.order[0];
+const firstTab=document.querySelector('.seg-tab[data-seg="'+first+'"]');
+if(firstTab)firstTab.classList.add('active');
+renderSegment(first);
+
+</script>
+</body>
+</html>
